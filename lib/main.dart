@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'models/rfq_draft.dart';
+import 'widgets/rfq_composer.dart';
+
 void main() => runApp(const SusuLumaApp());
 
 const _green = Color(0xFF176B50);
@@ -154,9 +157,27 @@ with a better connection.', style: TextStyle(color: Colors.white, fontWeight: Fo
         ])),
       ]));
 
-  void _createRfq(Product p) {
-    setState(() { _rfqs.insert(0, '${p.name} · ${p.supplier}'); _messages.insert(0, 'Inquiry draft for ${p.supplier}'); _tab = 2; });
-    _notice('Sample RFQ draft created. Sign-in and backend submission are not connected yet.');
+  Future<void> _createRfq(Product p) async {
+    final draft = await showDialog<RfqDraft>(
+      context: context,
+      builder: (context) => RfqComposer(
+        productName: p.name,
+        supplierName: p.supplier,
+        suggestedUnit: p.unit,
+      ),
+    );
+    if (!mounted || draft == null) return;
+
+    final item = draft.items.single;
+    setState(() {
+      _rfqs.insert(
+        0,
+        '${item.productName} · ${item.quantity} ${item.unit} · ${draft.deliveryLocation}',
+      );
+      _messages.insert(0, 'Inquiry draft for ${p.supplier}');
+      _tab = 2;
+    });
+    _notice('Local RFQ draft saved. It has not been sent to the supplier.');
   }
 
   Widget _activity(String title, IconData icon, List<String> items, String empty, String action) => ListView(padding: const EdgeInsets.all(20), children: [
