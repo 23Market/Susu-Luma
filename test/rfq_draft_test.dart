@@ -83,10 +83,7 @@ void main() {
         deliveryDate: DateTime(2026, 10, 20),
       );
 
-      expect(
-        draft.validate(today: DateTime(2026, 10, 17)),
-        isEmpty,
-      );
+      expect(draft.validate(today: DateTime(2026, 10, 17)), isEmpty);
     });
   });
 }

@@ -7,6 +7,11 @@ void main() {
     await tester.pumpWidget(const SusuLumaApp());
     expect(find.text('susu luma'), findsOneWidget);
     expect(find.text('Browse categories'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Sample listings'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Sample listings'), findsOneWidget);
   });
 
@@ -23,14 +28,29 @@ void main() {
 
   testWidgets('RFQ composer validates and saves a local draft', (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
-    await tester.tap(find.text('Request quote').first);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    final requestQuote = find
+        .widgetWithText(OutlinedButton, 'Request quote')
+        .hitTestable()
+        .first;
+    await tester.tap(requestQuote);
     await tester.pumpAndSettle();
 
     expect(find.text('Request a quote'), findsOneWidget);
-    expect(find.text('Portland Cement'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Portland Cement'),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Save draft'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Delivery location is required.'), findsOneWidget);
+    expect(
+      find.textContaining('Delivery location is required.'),
+      findsOneWidget,
+    );
 
     await tester.enterText(
       find.widgetWithText(TextField, 'Delivery location').first,
@@ -44,10 +64,17 @@ void main() {
     expect(find.textContaining('Local RFQ draft saved'), findsOneWidget);
   });
 
-  testWidgets('cancelling RFQ composer does not create a draft',
-      (tester) async {
+  testWidgets('cancelling RFQ composer does not create a draft', (
+    tester,
+  ) async {
     await tester.pumpWidget(const SusuLumaApp());
-    await tester.tap(find.text('Request quote').first);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    final requestQuote = find
+        .widgetWithText(OutlinedButton, 'Request quote')
+        .hitTestable()
+        .first;
+    await tester.tap(requestQuote);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

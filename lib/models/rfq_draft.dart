@@ -58,8 +58,11 @@ class RfqDraft {
     if (date != null) {
       final reference = today ?? DateTime.now();
       final requestedDay = DateTime(date.year, date.month, date.day);
-      final referenceDay =
-          DateTime(reference.year, reference.month, reference.day);
+      final referenceDay = DateTime(
+        reference.year,
+        reference.month,
+        reference.day,
+      );
       if (requestedDay.isBefore(referenceDay)) {
         errors.add('Delivery date cannot be in the past.');
       }

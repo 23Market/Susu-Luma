@@ -73,15 +73,18 @@ class _RfqComposerState extends State<RfqComposer> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.productName,
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  widget.productName,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 4),
                 Text('Supplier: ${widget.supplierName}'),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _quantityController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Quantity',
                     helperText: 'Enter a number greater than zero',
@@ -114,9 +117,11 @@ class _RfqComposerState extends State<RfqComposer> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
+                  Text(
+                    _error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
                 ],
                 const SizedBox(height: 8),
                 const Text(
@@ -132,10 +137,7 @@ class _RfqComposerState extends State<RfqComposer> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: _submit,
-            child: const Text('Save draft'),
-          ),
+          FilledButton(onPressed: _submit, child: const Text('Save draft')),
         ],
       );
 }

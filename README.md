@@ -10,7 +10,7 @@ Flutter-first mobile marketplace for business buyers and suppliers in Sierra Leo
 - Buyer–supplier inquiry messaging
 - Quote acceptance and order coordination
 - Delivery milestones, reporting and support
-- Operations/admin tooling planned as a separate responsive web console
+- Responsive operations/admin dashboard for supplier plans, RFQs, verification, revenue modelling and service queues
 
 ## Recommended architecture
 
@@ -35,14 +35,22 @@ MVP supports discovery, RFQs, quotes and order/fulfilment coordination only. No 
 
 ## Current scaffold status
 
-The initial commit introduces a lightweight Flutter app shell and a draft database migration. Screens currently use sample data and do not connect to a backend. No Supabase project, credentials, payment provider or live integrations have been configured.
+The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace and admin dashboard currently use clearly labelled sample data and do not connect to a backend. No Supabase project, credentials, payment provider or live integrations have been configured.
+
+The admin dashboard is available through the Business profile screen or the `/admin` route on web. Its figures model the recommended supplier-subscription, qualified-RFQ and featured-placement business model; they are not live financial results.
 
 ## Local development
 
 1. Install the Flutter stable SDK and an Android toolchain.
 2. Run `flutter pub get`.
 3. Run `flutter analyze` and `flutter test`.
-4. Run `flutter run` on an Android emulator/device.
+4. Run `flutter run` on an Android emulator/device, iOS simulator/device, or browser.
+
+Release builds:
+
+- Android: `flutter build appbundle --release` for Play Store delivery or `flutter build apk --release` for direct installation.
+- iOS: `flutter build ipa --release` on macOS with Xcode and configured Apple signing.
+- Web: `flutter build web --release`.
 
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
