@@ -31,6 +31,39 @@
 
   <title>Susu Luma</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script>
+    window.susuLumaTurnstileToken = function (siteKey) {
+      return new Promise(function (resolve, reject) {
+        let waited = 0;
+        const start = function () {
+          if (!window.turnstile) {
+            waited += 100;
+            if (waited >= 10000) return reject(new Error('Turnstile unavailable'));
+            return window.setTimeout(start, 100);
+          }
+          const host = document.createElement('div');
+          host.setAttribute('aria-label', 'Security challenge');
+          host.style.position = 'fixed';
+          host.style.left = '50%';
+          host.style.top = '50%';
+          host.style.transform = 'translate(-50%, -50%)';
+          host.style.zIndex = '2147483647';
+          document.body.appendChild(host);
+          const cleanup = function () { host.remove(); };
+          window.turnstile.render(host, {
+            sitekey: siteKey,
+            theme: 'auto',
+            appearance: 'interaction-only',
+            callback: function (token) { cleanup(); resolve(token); },
+            'error-callback': function () { cleanup(); reject(new Error('Challenge failed')); },
+            'expired-callback': function () { cleanup(); reject(new Error('Challenge expired')); }
+          });
+        };
+        start();
+      });
+    };
+  </script>
 </head>
 <body>
   <!--

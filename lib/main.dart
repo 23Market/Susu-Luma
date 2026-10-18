@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'admin/admin_dashboard.dart';
+import 'admin/admin_route_gate.dart';
+import 'auth/auth_page.dart';
+import 'auth/mfa_page.dart';
+import 'auth/organization_onboarding_page.dart';
+import 'auth/password_recovery_pages.dart';
+import 'config/app_config.dart';
 import 'models/rfq_draft.dart';
+import 'services/backend_runtime.dart';
+import 'services/auth_api_client.dart';
 import 'widgets/rfq_composer.dart';
 
-void main() => runApp(const SusuLumaApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final backend = await BackendRuntime.initialize(AppConfig.fromEnvironment());
+  runApp(SusuLumaApp(backend: backend));
+}
 
 const _green = Color(0xFF176B50);
 const _ink = Color(0xFF17251F);
@@ -12,7 +25,12 @@ const _muted = Color(0xFF68766F);
 const _canvas = Color(0xFFF5F7F4);
 
 class SusuLumaApp extends StatelessWidget {
-  const SusuLumaApp({super.key});
+  const SusuLumaApp({
+    super.key,
+    this.backend = const BackendRuntime.offline(),
+  });
+
+  final BackendRuntime backend;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -34,9 +52,12 @@ class SusuLumaApp extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
-        home: const MarketplaceShell(),
+        home: MarketplaceShell(backend: backend),
         routes: {
-          '/admin': (context) => const AdminDashboard(),
+          '/admin': (context) =>
+              AdminRouteGate(backendAvailable: backend.isAvailable),
+          '/forgot-password': (context) => const ForgotPasswordPage(),
+          '/reset-password': (context) => const PasswordResetPage(),
         },
       );
 }
@@ -100,7 +121,9 @@ const _products = <Product>[
 ];
 
 class MarketplaceShell extends StatefulWidget {
-  const MarketplaceShell({super.key});
+  const MarketplaceShell({super.key, required this.backend});
+
+  final BackendRuntime backend;
   @override
   State<MarketplaceShell> createState() => _MarketplaceShellState();
 }
@@ -562,67 +585,115 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
             style: TextStyle(fontSize: 11, color: _muted)),
       ]);
 
-  Widget _profile() => ListView(padding: const EdgeInsets.all(20), children: [
-        const Text('Business profile',
-            style: TextStyle(
-                fontWeight: FontWeight.w800, fontSize: 25, color: _ink)),
-        const SizedBox(height: 8),
-        const Text('Set up your business identity to start sourcing.',
-            style: TextStyle(color: _muted)),
-        const SizedBox(height: 20),
-        Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(20)),
-            child: Column(children: [
-              const CircleAvatar(
-                  radius: 32,
-                  backgroundColor: Color(0xFFE5EEE6),
-                  child: Icon(Icons.business_rounded, size: 32, color: _green)),
-              const SizedBox(height: 12),
-              const Text('Your business',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              const SizedBox(height: 5),
-              const Text(
-                  'Sign-in and business verification will be enabled after secure backend setup.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: _muted, height: 1.4)),
-              const SizedBox(height: 14),
-              FilledButton(
-                  onPressed: () => _notice(
-                      'Authentication is not configured in this prototype.'),
-                  child: const Text('Sign in / Register'))
-            ])),
-        const SizedBox(height: 16),
+  Widget _profile() {
+    final backendAvailable = widget.backend.isAvailable;
+    final user = backendAvailable && !kIsWeb
+        ? Supabase.instance.client.auth.currentUser
+        : null;
+    final userEmail =
+        kIsWeb ? AuthApiClient.instance.currentEmail : user?.email;
+    return ListView(padding: const EdgeInsets.all(20), children: [
+      const Text('Business profile',
+          style: TextStyle(
+              fontWeight: FontWeight.w800, fontSize: 25, color: _ink)),
+      const SizedBox(height: 8),
+      const Text('Set up your business identity to start sourcing.',
+          style: TextStyle(color: _muted)),
+      const SizedBox(height: 20),
+      Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          child: Column(children: [
+            const CircleAvatar(
+                radius: 32,
+                backgroundColor: Color(0xFFE5EEE6),
+                child: Icon(Icons.business_rounded, size: 32, color: _green)),
+            const SizedBox(height: 12),
+            Text(userEmail ?? 'Your business',
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            const SizedBox(height: 5),
+            Text(
+                backendAvailable
+                    ? userEmail == null
+                        ? 'Sign in to create or join a business organisation.'
+                        : 'Signed in. Organisation onboarding and verification remain controlled workflows.'
+                    : 'Backend configuration is required before sign-in is enabled.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: _muted, height: 1.4)),
+            const SizedBox(height: 14),
+            FilledButton(
+                onPressed: backendAvailable
+                    ? userEmail == null
+                        ? () async {
+                            await Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                    builder: (_) => const AuthPage()));
+                            if (mounted) setState(() {});
+                          }
+                        : () async {
+                            if (kIsWeb) {
+                              await AuthApiClient.instance.logout();
+                            } else {
+                              await Supabase.instance.client.auth.signOut();
+                            }
+                            if (mounted) setState(() {});
+                          }
+                    : () => _notice(
+                        'Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY at build time.'),
+                child:
+                    Text(userEmail == null ? 'Sign in / Register' : 'Sign out'))
+          ])),
+      const SizedBox(height: 16),
+      _profileRow(
+          Icons.bookmarks_outlined,
+          'Saved products',
+          '${_saved.length} saved',
+          () => _notice(_saved.isEmpty
+              ? 'You have no saved sample products yet.'
+              : _saved.join(', '))),
+      if (backendAvailable && userEmail != null)
+        _profileRow(Icons.add_business_rounded, 'Set up an organisation',
+            'Create your buyer or supplier business identity', () async {
+          final created = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                  builder: (_) => const OrganizationOnboardingPage()));
+          if (created == true) {
+            _notice('Organisation created. You are its owner.');
+          }
+        }),
+      if (backendAvailable && userEmail != null)
         _profileRow(
-            Icons.bookmarks_outlined,
-            'Saved products',
-            '${_saved.length} saved',
-            () => _notice(_saved.isEmpty
-                ? 'You have no saved sample products yet.'
-                : _saved.join(', '))),
-        _profileRow(
-            Icons.space_dashboard_outlined,
-            'Admin dashboard',
-            'Open the local business operations demo',
-            () => Navigator.of(context).pushNamed('/admin')),
-        _profileRow(
-            Icons.verified_user_outlined,
-            'Supplier verification',
-            'Review process required',
-            () => _notice(
-                'Verification is not live. No supplier is verified by this prototype.')),
-        _profileRow(
-            Icons.help_outline_rounded,
-            'Help & support',
-            'Support centre',
-            () => _notice(
-                'Support contact and escalation policy must be configured before pilot.')),
-        const SizedBox(height: 16),
-        const Text(
-            'Susu Luma is a marketplace and does not itself sell the listed products. No payments, escrow or wallet services are enabled.',
-            style: TextStyle(color: _muted, fontSize: 11, height: 1.5)),
-      ]);
+            Icons.phonelink_lock_rounded,
+            'Two-factor authentication',
+            'Authenticator app and one-time backup codes',
+            () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const MfaPage()),
+                )),
+      _profileRow(
+          Icons.space_dashboard_outlined,
+          'Admin dashboard',
+          'Open the local business operations demo',
+          () => Navigator.of(context).pushNamed('/admin')),
+      _profileRow(
+          Icons.verified_user_outlined,
+          'Supplier verification',
+          'Review process required',
+          () => _notice(
+              'Verification is not live. No supplier is verified by this prototype.')),
+      _profileRow(
+          Icons.help_outline_rounded,
+          'Help & support',
+          'Support centre',
+          () => _notice(
+              'Support contact and escalation policy must be configured before pilot.')),
+      const SizedBox(height: 16),
+      const Text(
+          'Susu Luma is a marketplace and does not itself sell the listed products. No payments, escrow or wallet services are enabled.',
+          style: TextStyle(color: _muted, fontSize: 11, height: 1.5)),
+    ]);
+  }
 
   Widget _profileRow(
           IconData icon, String title, String subtitle, VoidCallback onTap) =>

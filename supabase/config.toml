@@ -1,0 +1,39 @@
+project_id = "susu-luma"
+
+[auth]
+enabled = true
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 12
+password_requirements = "lower_upper_letters_digits_symbols"
+
+[auth.rate_limit]
+email_sent = 5
+sms_sent = 5
+anonymous_users = 5
+token_refresh = 30
+sign_in_sign_ups = 5
+token_verifications = 5
+web3 = 5
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "15m"
+otp_length = 6
+otp_expiry = 600
+
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
+
+[functions.auth-api]
+verify_jwt = false

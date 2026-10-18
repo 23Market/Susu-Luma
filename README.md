@@ -21,6 +21,7 @@ Flutter-first mobile marketplace for business buyers and suppliers in Sierra Leo
 - **Private buckets** for verification documents and order evidence; time-limited signed access after authorization.
 - **Environments:** local/dev, staging and production separated. Secrets managed outside source control.
 - **Observability:** privacy-minimised events, audit trail for privileged actions, crash reporting and operational alerts.
+- **Authentication:** web sessions terminate at a same-origin auth API using Secure, HttpOnly, SameSite=Strict cookies; native sessions use Android Keystore/iOS Keychain storage. Admin access requires a server-authorised role and AAL2 MFA.
 
 ## Financial/regulatory boundary
 
@@ -35,7 +36,7 @@ MVP supports discovery, RFQs, quotes and order/fulfilment coordination only. No 
 
 ## Current scaffold status
 
-The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace and admin dashboard currently use clearly labelled sample data and do not connect to a backend. No Supabase project, credentials, payment provider or live integrations have been configured.
+The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace and admin dashboard currently use clearly labelled sample data. Supabase bootstrap and email/password authentication are implemented, but remain disabled unless valid build-time configuration is supplied. No Supabase project, payment provider or live data integration has been configured.
 
 The admin dashboard is available through the Business profile screen or the `/admin` route on web. Its figures model the recommended supplier-subscription, qualified-RFQ and featured-placement business model; they are not live financial results.
 
@@ -45,6 +46,18 @@ The admin dashboard is available through the Business profile screen or the `/ad
 2. Run `flutter pub get`.
 3. Run `flutter analyze` and `flutter test`.
 4. Run `flutter run` on an Android emulator/device, iOS simulator/device, or browser.
+
+To connect an approved non-production Supabase project, provide its HTTPS URL and publishable client key at build or run time:
+
+```sh
+flutter run \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+The app deliberately stays in offline prototype mode when either value is absent or invalid. Never supply a Supabase service-role key to a Flutter build.
+
+For web deployment, configure `AUTH_API_BASE_URL` and `TURNSTILE_SITE_KEY`, deploy `supabase/functions/auth-api`, and reverse proxy the auth path on the same HTTPS origin. Follow [docs/auth-security.md](docs/auth-security.md); a direct browser-to-Supabase session is deliberately disabled on web.
 
 Release builds:
 
