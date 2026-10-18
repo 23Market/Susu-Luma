@@ -32,7 +32,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Delivery location is required.'), findsOneWidget);
 
-    await tester.enterText(find.widgetWithText(TextField, 'Delivery location').first, 'Freetown');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Delivery location').first,
+      'Freetown',
+    );
     await tester.tap(find.text('Save draft'));
     await tester.pumpAndSettle();
 
@@ -41,7 +44,8 @@ void main() {
     expect(find.textContaining('Local RFQ draft saved'), findsOneWidget);
   });
 
-  testWidgets('cancelling RFQ composer does not create a draft', (tester) async {
+  testWidgets('cancelling RFQ composer does not create a draft',
+      (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
     await tester.tap(find.text('Request quote').first);
     await tester.pumpAndSettle();

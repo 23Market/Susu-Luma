@@ -106,8 +106,7 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
         Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: _green, borderRadius: BorderRadius.circular(24), gradient: const LinearGradient(colors: [_green, Color(0xFF0D503B)], begin: Alignment.topLeft, end: Alignment.bottomRight)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .15), borderRadius: BorderRadius.circular(30)), child: const Text('BUY · SELL · SOURCE', style: TextStyle(color: Colors.white, fontSize: 10, letterSpacing: 1.3, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
-          const Text('Business starts
-with a better connection.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 27, height: 1.12, letterSpacing: -.7)),
+          const Text('Business starts\nwith a better connection.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 27, height: 1.12, letterSpacing: -.7)),
           const SizedBox(height: 10),
           const Text('Discover suppliers and source products across Sierra Leone.', style: TextStyle(color: Color(0xFFE2F0E9), height: 1.4)),
           const SizedBox(height: 20),
