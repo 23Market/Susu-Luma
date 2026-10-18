@@ -23,3 +23,28 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
+
+  backend-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_AUTH_CAPTCHA_SECRET: local-ci-turnstile-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.4
+      - name: Type-check auth Edge Function
+        run: deno check --node-modules-dir=auto supabase/functions/auth-api/index.ts
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.84.2
+      - name: Start isolated database and apply migrations
+        run: supabase db start
+      - name: Lint database schema
+        run: supabase db lint --local --level warning
+      - name: Run database security tests
+        run: supabase test db
+      - name: Stop isolated database
+        if: always()
+        run: supabase stop --no-backup

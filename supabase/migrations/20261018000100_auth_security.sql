@@ -291,7 +291,7 @@ begin
     ip_hash, account_hash, action, succeeded, reason
   ) values (
     'provider-hook-no-ip',
-    encode(public.digest(subject::text, 'sha256'), 'hex'),
+    encode(extensions.digest(subject::text, 'sha256'), 'hex'),
     'login',
     password_valid,
     case when password_valid then null else 'invalid_password' end

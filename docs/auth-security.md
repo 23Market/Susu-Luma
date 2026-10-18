@@ -58,6 +58,8 @@ The auth API applies the following to login, signup, password recovery/reset, em
 
 Operational alerts should cover lockout spikes, repeated CAPTCHA failure, backup-code use and admin access denial. Retention for `auth_security_events` must be approved before production.
 
+The `backend-security` CI job type-checks the Edge Function, applies every migration to a fresh local Supabase database, runs database linting and executes the pgTAP security suite in `supabase/tests/database`. This gate verifies the rate-limit boundary, CAPTCHA escalation, server-only function grants, atomic backup-code redemption and AAL2 administrator checks without using a shared backend.
+
 ## Password checks
 
 The client provides immediate strength feedback and blocks short, incomplete and common passwords. The auth API independently enforces the same structural rules and queries the Have I Been Pwned range API using k-anonymity. It fails closed if the breach check is unavailable. Supabase password policy and leaked-password protection remain the final enforcement layer for direct provider traffic.

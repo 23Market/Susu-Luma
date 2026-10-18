@@ -1,6 +1,6 @@
 -- Susu Luma foundation schema (draft; review and test before applying to any shared project).
 -- This migration deliberately does not create wallet, escrow, lending or settlement tables.
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create type public.listing_status as enum ('draft', 'pending_review', 'published', 'paused', 'rejected', 'archived');
 create type public.price_mode as enum ('fixed', 'quote_only', 'indicative');
