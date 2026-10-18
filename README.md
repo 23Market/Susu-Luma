@@ -36,9 +36,9 @@ MVP supports discovery, RFQs, quotes and order/fulfilment coordination only. No 
 
 ## Current scaffold status
 
-The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace and admin dashboard currently use clearly labelled sample data. Supabase bootstrap and email/password authentication are implemented, but remain disabled unless valid build-time configuration is supplied. No Supabase project, payment provider or live data integration has been configured.
+The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace catalogue still uses local sample data. The admin dashboard is connected in code to the Supabase reporting and moderation API: it reads live RFQ, supplier, revenue and operations data and can review suppliers, moderate listings and resolve support cases. Authentication remains disabled unless valid build-time configuration is supplied. No shared Supabase project or payment provider has been configured from this repository.
 
-The admin dashboard is available through the Business profile screen or the `/admin` route on web. Its figures model the recommended supplier-subscription, qualified-RFQ and featured-placement business model; they are not live financial results.
+The admin dashboard is available through the Business profile screen or the `/admin` route on web. Its financial figures come from recognized `revenue_events`; plan prices and unit-economics thresholds are business targets rather than financial results. Web reads and mutations pass through the same-origin auth API. Native builds use AAL2-protected database functions. Every moderation mutation rechecks platform-admin membership on the server and writes an audit event.
 
 ## Local development
 

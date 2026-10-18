@@ -118,6 +118,47 @@ class AuthApiClient {
     return response.statusCode == 200 && _decode(response)['allowed'] == true;
   }
 
+  Future<Map<String, dynamic>?> fetchAdminDashboard() async {
+    final response = await _client.get(_baseUrl.resolve('admin/dashboard'));
+    if (response.statusCode != 200) return null;
+    final dashboard = _decode(response)['dashboard'];
+    return dashboard is Map ? Map<String, dynamic>.from(dashboard) : null;
+  }
+
+  Future<bool> reviewSupplier(
+    String caseId,
+    String decision, {
+    String? reason,
+  }) async {
+    final response = await _postAuthenticated('admin/suppliers/review', {
+      'caseId': caseId,
+      'decision': decision,
+      if (reason != null) 'reason': reason,
+    });
+    return response.statusCode == 200;
+  }
+
+  Future<bool> reviewListing(
+    String listingId,
+    String decision, {
+    String? reason,
+  }) async {
+    final response = await _postAuthenticated('admin/listings/review', {
+      'listingId': listingId,
+      'decision': decision,
+      if (reason != null) 'reason': reason,
+    });
+    return response.statusCode == 200;
+  }
+
+  Future<bool> resolveSupportCase(String caseId, String resolution) async {
+    final response = await _postAuthenticated('admin/support/resolve', {
+      'caseId': caseId,
+      'resolution': resolution,
+    });
+    return response.statusCode == 200;
+  }
+
   Future<MfaEnrollment?> enrollTotp() async {
     final response = await _postAuthenticated('mfa/enroll', const {});
     if (response.statusCode != 200) return null;

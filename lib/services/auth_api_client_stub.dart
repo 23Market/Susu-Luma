@@ -36,6 +36,15 @@ class AuthApiClient {
       const AuthApiResult(success: false, error: 'web_auth_only');
   Future<void> logout() async {}
   Future<bool> hasAdminAccess() async => false;
+  Future<Map<String, dynamic>?> fetchAdminDashboard() async => null;
+  Future<bool> reviewSupplier(String caseId, String decision,
+          {String? reason}) async =>
+      false;
+  Future<bool> reviewListing(String listingId, String decision,
+          {String? reason}) async =>
+      false;
+  Future<bool> resolveSupportCase(String caseId, String resolution) async =>
+      false;
   Future<MfaEnrollment?> enrollTotp() async => null;
   Future<bool> verifyTotp(String factorId, String code) async => false;
   Future<List<String>> generateBackupCodes() async => const [];

@@ -1,14 +1,25 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
-const _green = Color(0xFF176B50);
-const _deepGreen = Color(0xFF0D503B);
-const _ink = Color(0xFF17251F);
-const _muted = Color(0xFF68766F);
-const _canvas = Color(0xFFF5F7F4);
-const _line = Color(0xFFE1E8E3);
+import 'admin_dashboard_data.dart';
+
+const _green = Color(0xFF195C43);
+const _deepGreen = Color(0xFF103D30);
+const _ink = Color(0xFF17231E);
+const _muted = Color(0xFF66736D);
+const _line = Color(0xFFE2E8E4);
+const _canvas = Color(0xFFF6F8F6);
 
 class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+  const AdminDashboard({
+    super.key,
+    this.dataSource = const LiveAdminDashboardDataSource(),
+    this.initialSnapshot,
+  });
+
+  final AdminDashboardDataSource dataSource;
+  final AdminDashboardSnapshot? initialSnapshot;
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
@@ -16,44 +27,53 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _section = 0;
-  int _range = 1;
   String _query = '';
+  AdminDashboardSnapshot? _snapshot;
+  bool _loading = false;
+  String? _busyId;
 
-  static const _destinations = <_AdminDestination>[
-    _AdminDestination('Overview', Icons.space_dashboard_outlined),
-    _AdminDestination('Marketplace', Icons.storefront_outlined),
-    _AdminDestination('Suppliers', Icons.verified_user_outlined),
-    _AdminDestination('Revenue', Icons.payments_outlined),
-    _AdminDestination('Operations', Icons.rule_folder_outlined),
+  static const _destinations = [
+    ('Overview', Icons.space_dashboard_outlined),
+    ('Marketplace', Icons.swap_horiz_rounded),
+    ('Suppliers', Icons.storefront_outlined),
+    ('Revenue', Icons.payments_outlined),
+    ('Operations', Icons.fact_check_outlined),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _snapshot = widget.initialSnapshot;
+    if (_snapshot == null) _reload();
+  }
+
+  Future<void> _reload() async {
+    setState(() => _loading = true);
+    try {
+      final result = await widget.dataSource.fetch();
+      if (mounted) setState(() => _snapshot = result);
+    } on Object {
+      if (mounted) setState(() => _snapshot = null);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 980;
+          final desktop = constraints.maxWidth >= 920;
           return Scaffold(
             backgroundColor: _canvas,
-            appBar: wide
-                ? null
-                : AppBar(
-                    title: const _Brand(compact: true),
-                    actions: [
-                      IconButton(
-                        tooltip: 'Notifications',
-                        onPressed: _showPrototypeNotice,
-                        icon: const Icon(Icons.notifications_none_rounded),
-                      ),
-                    ],
-                  ),
-            drawer: wide ? null : Drawer(child: _mobileNavigation()),
+            drawer: desktop ? null : Drawer(child: _navigation(false)),
             body: Row(
               children: [
-                if (wide) _desktopNavigation(),
+                if (desktop) SizedBox(width: 244, child: _navigation(true)),
                 Expanded(
                   child: Column(
                     children: [
-                      if (wide) _topBar(),
-                      Expanded(child: _sectionBody()),
+                      _topBar(desktop),
+                      Expanded(child: _body()),
                     ],
                   ),
                 ),
@@ -63,369 +83,510 @@ class _AdminDashboardState extends State<AdminDashboard> {
         },
       );
 
-  Widget _desktopNavigation() => Container(
-        width: 248,
-        color: _deepGreen,
+  Widget _navigation(bool dark) => Container(
+        color: dark ? _deepGreen : Colors.white,
         padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _Brand(onDark: true),
-            const SizedBox(height: 30),
-            for (var index = 0; index < _destinations.length; index++)
-              _NavigationItem(
-                destination: _destinations[index],
-                selected: _section == index,
-                onTap: () => setState(() => _section = index),
-              ),
-            const Spacer(),
-            const _PrototypeCard(onDark: true),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white70,
-                alignment: Alignment.centerLeft,
-              ),
-              icon: const Icon(Icons.arrow_back_rounded),
-              label: const Text('Back to marketplace'),
-            ),
-          ],
-        ),
-      );
-
-  Widget _mobileNavigation() => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
+        child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _Brand(),
-              const SizedBox(height: 24),
-              for (var index = 0; index < _destinations.length; index++)
-                ListTile(
-                  selected: _section == index,
-                  selectedColor: _green,
-                  selectedTileColor: const Color(0xFFE5EEE6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              _Brand(dark: dark),
+              const SizedBox(height: 28),
+              for (var i = 0; i < _destinations.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      onTap: () {
+                        setState(() => _section = i);
+                        if (!dark) Navigator.of(context).pop();
+                      },
+                      selected: _section == i,
+                      selectedTileColor:
+                          dark ? Colors.white12 : const Color(0xFFE5EEE6),
+                      selectedColor: dark ? Colors.white : _green,
+                      textColor: dark ? Colors.white70 : _ink,
+                      iconColor: dark ? Colors.white70 : _ink,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      leading: Icon(_destinations[i].$2),
+                      title: Text(_destinations[i].$1),
+                    ),
                   ),
-                  leading: Icon(_destinations[index].icon),
-                  title: Text(_destinations[index].label),
-                  onTap: () {
-                    setState(() => _section = index);
-                    Navigator.of(context).pop();
-                  },
                 ),
               const Spacer(),
-              const _PrototypeCard(),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('Back to marketplace'),
-              ),
+              if (dark) const _SecurityCard(),
             ],
           ),
         ),
       );
 
-  Widget _topBar() => Container(
+  Widget _topBar(bool desktop) => Container(
         height: 76,
-        padding: const EdgeInsets.symmetric(horizontal: 28),
+        padding: const EdgeInsets.symmetric(horizontal: 22),
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(bottom: BorderSide(color: _line)),
         ),
         child: Row(
           children: [
+            if (!desktop)
+              Builder(
+                builder: (context) => IconButton(
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: const Icon(Icons.menu_rounded),
+                ),
+              ),
             Expanded(
               child: TextField(
                 onChanged: (value) => setState(() => _query = value),
                 decoration: const InputDecoration(
-                  hintText: 'Search suppliers, RFQs or orders',
+                  hintText: 'Search current queue',
                   prefixIcon: Icon(Icons.search_rounded),
                   isDense: true,
                 ),
               ),
             ),
-            const SizedBox(width: 18),
-            const _StatusPill(
-              label: 'Demo workspace',
-              color: Color(0xFFFFF3D6),
-              foreground: Color(0xFF815A00),
-              icon: Icons.science_outlined,
+            const SizedBox(width: 14),
+            const _Pill(
+              label: 'Live backend',
+              color: Color(0xFFE5EEE6),
+              foreground: _green,
+              icon: Icons.cloud_done_outlined,
             ),
-            const SizedBox(width: 10),
             IconButton(
-              tooltip: 'Notifications',
-              onPressed: _showPrototypeNotice,
-              icon: const Icon(Icons.notifications_none_rounded),
-            ),
-            const SizedBox(width: 8),
-            const CircleAvatar(
-              backgroundColor: Color(0xFFE5EEE6),
-              child: Text('SL', style: TextStyle(color: _green)),
+              onPressed: _loading ? null : _reload,
+              tooltip: 'Refresh',
+              icon: _loading
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded),
             ),
           ],
         ),
       );
 
-  Widget _sectionBody() {
-    switch (_section) {
-      case 1:
-        return _marketplace();
-      case 2:
-        return _suppliers();
-      case 3:
-        return _revenue();
-      case 4:
-        return _operations();
-      default:
-        return _overview();
+  Widget _body() {
+    final data = _snapshot;
+    if (data == null && _loading) {
+      return const Center(child: CircularProgressIndicator());
     }
+    if (data == null) return _ErrorState(onRetry: _reload);
+    return switch (_section) {
+      1 => _marketplace(data),
+      2 => _suppliers(data),
+      3 => _revenue(data),
+      4 => _operations(data),
+      _ => _overview(data),
+    };
   }
 
-  Widget _overview() => _Page(
+  Widget _overview(AdminDashboardSnapshot data) => _Page(
         title: 'Business overview',
-        subtitle: 'Marketplace health and monetisation signals',
-        trailing: _RangeSelector(
-          selected: _range,
-          onSelected: (value) => setState(() => _range = value),
-        ),
+        subtitle: 'Marketplace health as of ${_dateTime(data.generatedAt)}',
         children: [
-          const _NoticeBanner(),
-          const SizedBox(height: 20),
-          const _MetricGrid(
-            metrics: [
-              _Metric('Monthly revenue', 'SLE 32,500', '+12.4%',
-                  Icons.trending_up_rounded, Color(0xFFE5EEE6)),
-              _Metric('Marketplace GMV', 'SLE 1.26m', '+18.1%',
-                  Icons.receipt_long_outlined, Color(0xFFE5EAF2)),
-              _Metric('Qualified RFQs', '300', '+26 this month',
-                  Icons.request_quote_outlined, Color(0xFFF2EAD7)),
-              _Metric('RFQ → order', '18.7%', '+2.1 pts',
-                  Icons.sync_alt_rounded, Color(0xFFECE4F2)),
-            ],
-          ),
+          _MetricGrid([
+            _Metric('Monthly revenue', _money(data.overview.monthlyRevenue),
+                'Recognized this month', Icons.trending_up_rounded),
+            _Metric('Marketplace GMV', _money(data.overview.marketplaceGmv),
+                'Accepted order value', Icons.receipt_long_outlined),
+            _Metric('Qualified RFQs', '${data.overview.qualifiedRfqs}',
+                'Submitted this month', Icons.request_quote_outlined),
+            _Metric(
+                'RFQ to order',
+                '${data.overview.conversionRate.toStringAsFixed(1)}%',
+                'Monthly conversion',
+                Icons.sync_alt_rounded),
+          ]),
           const SizedBox(height: 20),
           LayoutBuilder(
             builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 900;
-              const chart = _Panel(
+              final chart = _Panel(
                 title: 'Revenue momentum',
-                subtitle: 'Illustrative monthly recurring revenue in SLE',
-                child: SizedBox(height: 230, child: _RevenueChart()),
+                subtitle: 'Recognized revenue for the last six months',
+                child: SizedBox(
+                  height: 235,
+                  child: _RevenueChart(data.revenue.history),
+                ),
               );
-              const mix = _Panel(
-                title: 'Revenue mix',
-                subtitle: 'Designed for diversified marketplace income',
-                child: _RevenueMix(),
+              final priorities = _Panel(
+                title: 'Priority actions',
+                subtitle: 'Queues requiring an administrator',
+                child: _PriorityActions(data.operations),
               );
-              if (stacked) {
-                return const Column(
-                    children: [chart, SizedBox(height: 20), mix]);
+              if (constraints.maxWidth < 850) {
+                return Column(children: [
+                  chart,
+                  const SizedBox(height: 20),
+                  priorities,
+                ]);
               }
-              return const Row(
+              return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(flex: 3, child: chart),
-                  SizedBox(width: 20),
-                  Expanded(flex: 2, child: mix),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 2, child: priorities),
                 ],
               );
             },
           ),
-          const SizedBox(height: 20),
-          const _Panel(
-            title: 'Priority actions',
-            subtitle: 'Operational work that protects trust and conversion',
-            child: _PriorityActions(),
-          ),
         ],
       );
 
-  Widget _marketplace() {
-    final rows = _rfqRows.where((row) {
-      final needle = _query.trim().toLowerCase();
-      return needle.isEmpty ||
-          '${row.reference} ${row.buyer} ${row.category}'
-              .toLowerCase()
-              .contains(needle);
-    }).toList();
+  Widget _marketplace(AdminDashboardSnapshot data) {
+    final rows = data.marketplace.recentRfqs
+        .where((item) => _matches(
+            '${item.referenceCode} ${item.buyer} ${item.category} ${item.status}'))
+        .toList();
     return _Page(
       title: 'Marketplace activity',
-      subtitle: 'RFQ quality, matching and order conversion',
-      trailing: FilledButton.icon(
-        onPressed: _showPrototypeNotice,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create manual RFQ'),
-      ),
+      subtitle: 'RFQ demand and order conversion from the live database',
       children: [
-        const _MetricGrid(
-          metrics: [
-            _Metric('Open RFQs', '74', '18 need routing',
-                Icons.mark_email_unread_outlined, Color(0xFFF2EAD7)),
-            _Metric('Median responses', '3.2', 'Target: 4+',
-                Icons.forum_outlined, Color(0xFFE5EEE6)),
-            _Metric('Orders this month', '56', 'SLE 1.26m GMV',
-                Icons.inventory_2_outlined, Color(0xFFE5EAF2)),
-            _Metric('Disputed orders', '3', '5.4% of orders',
-                Icons.report_problem_outlined, Color(0xFFFFE6E3)),
-          ],
-        ),
+        _MetricGrid([
+          _Metric('Open RFQs', '${data.marketplace.openRfqs}',
+              'Submitted, open or quoted', Icons.mark_email_unread_outlined),
+          _Metric('Orders this month', '${data.marketplace.ordersThisMonth}',
+              _money(data.overview.marketplaceGmv), Icons.inventory_2_outlined),
+          _Metric('Disputed orders', '${data.marketplace.disputedOrders}',
+              'Needs resolution', Icons.report_problem_outlined),
+          _Metric(
+              'Conversion',
+              '${data.overview.conversionRate.toStringAsFixed(1)}%',
+              'RFQ to order',
+              Icons.insights_outlined),
+        ]),
         const SizedBox(height: 20),
         _Panel(
           title: 'Recent RFQs',
-          subtitle: 'Qualified demand routed to relevant suppliers',
-          child: _DataTableCard(
+          subtitle: '${rows.length} matching requests',
+          child: _Table(
             columns: const [
               'Reference',
               'Buyer',
               'Category',
-              'Value',
-              'Status'
+              'Status',
+              'Created'
             ],
-            rows: [
-              for (final row in rows)
-                [
-                  row.reference,
-                  row.buyer,
-                  row.category,
-                  row.value,
-                  _StatusPill(
-                    label: row.status,
-                    color: row.statusColor,
-                    foreground: _ink,
-                  ),
-                ],
-            ],
+            rows: rows
+                .map((row) => [
+                      Text(row.referenceCode),
+                      Text(row.buyer),
+                      Text(row.category),
+                      _Pill(label: _label(row.status)),
+                      Text(_date(row.createdAt)),
+                    ])
+                .toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _suppliers() => _Page(
-        title: 'Supplier growth',
-        subtitle: 'Verification, plans and marketplace quality',
-        trailing: OutlinedButton.icon(
-          onPressed: _showPrototypeNotice,
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Export'),
+  Widget _suppliers(AdminDashboardSnapshot data) {
+    final rows = data.suppliers.verificationQueue
+        .where((item) => _matches(
+            '${item.supplier} ${item.district} ${item.scope} ${item.status}'))
+        .toList();
+    final rate = data.suppliers.activeSuppliers == 0
+        ? 0
+        : data.suppliers.verifiedSuppliers *
+            100 /
+            data.suppliers.activeSuppliers;
+    return _Page(
+      title: 'Supplier growth',
+      subtitle: 'Verification, subscriptions and marketplace quality',
+      children: [
+        _MetricGrid([
+          _Metric('Active suppliers', '${data.suppliers.activeSuppliers}',
+              'With published listings', Icons.storefront_outlined),
+          _Metric('Verified', '${data.suppliers.verifiedSuppliers}',
+              '${rate.toStringAsFixed(0)}% of active', Icons.verified_outlined),
+          _Metric('Pro suppliers', '${data.suppliers.proSuppliers}',
+              'Active or trialing', Icons.workspace_premium_outlined),
+          _Metric('At risk', '${data.suppliers.atRiskSuppliers}',
+              'Past due subscriptions', Icons.warning_amber_rounded),
+        ]),
+        const SizedBox(height: 20),
+        const _Panel(
+          title: 'Subscription model',
+          subtitle: 'Commercial plan design',
+          child: _PlanGrid(),
         ),
-        children: [
-          const _MetricGrid(
-            metrics: [
-              _Metric('Active suppliers', '100', '+14 this month',
-                  Icons.store_mall_directory_outlined, Color(0xFFE5EEE6)),
-              _Metric('Verified', '68%', 'Target: 80%', Icons.verified_outlined,
-                  Color(0xFFE5EAF2)),
-              _Metric('Pro conversion', '31%', '+4.6 pts',
-                  Icons.workspace_premium_outlined, Color(0xFFF2EAD7)),
-              _Metric('At-risk suppliers', '8', 'No response in 14d',
-                  Icons.warning_amber_rounded, Color(0xFFFFE6E3)),
+        const SizedBox(height: 20),
+        _Panel(
+          title: 'Verification queue',
+          subtitle: '${rows.length} decisions awaiting review',
+          child: _Table(
+            columns: const [
+              'Supplier',
+              'District',
+              'Scope',
+              'Status',
+              'Actions'
             ],
+            rows: rows
+                .map((row) => [
+                      Text(row.supplier),
+                      Text(row.district.isEmpty ? '—' : row.district),
+                      Text(row.scope.isEmpty ? 'General' : row.scope),
+                      _Pill(label: _label(row.status)),
+                      _ActionButtons(
+                        busy: _busyId == row.id,
+                        onApprove: () => _supplierDecision(row, 'approved'),
+                        onReject: () => _supplierDecision(row, 'rejected'),
+                        onReview: row.status == 'pending'
+                            ? () => _supplierDecision(row, 'in_review')
+                            : null,
+                      ),
+                    ])
+                .toList(),
           ),
-          const SizedBox(height: 20),
-          const _Panel(
-            title: 'Subscription design',
-            subtitle: 'Plans align pricing with supplier value received',
-            child: _PlanGrid(),
-          ),
-          const SizedBox(height: 20),
-          const _Panel(
-            title: 'Verification queue',
-            subtitle: 'Decisions must be auditable and backed by evidence',
-            child: _VerificationQueue(),
-          ),
-        ],
-      );
-
-  Widget _revenue() => _Page(
-        title: 'Revenue model',
-        subtitle: 'Recurring and usage-based income without holding funds',
-        trailing: FilledButton.icon(
-          onPressed: _showPrototypeNotice,
-          icon: const Icon(Icons.tune_rounded),
-          label: const Text('Edit pricing'),
         ),
+      ],
+    );
+  }
+
+  Widget _revenue(AdminDashboardSnapshot data) => _Page(
+        title: 'Revenue model',
+        subtitle:
+            'Recognized platform income without custody of customer funds',
         children: [
-          const _NoticeBanner(
+          const _Notice(
             title: 'Financial boundary',
             message:
-                'Susu Luma does not operate a wallet, escrow or settlement service. Payment integrations must use approved providers and authoritative confirmation.',
-            icon: Icons.account_balance_outlined,
+                'Susu Luma records its own fees and subscriptions. Buyer and supplier payments remain with approved payment providers.',
           ),
           const SizedBox(height: 20),
-          const _Panel(
+          _Panel(
             title: 'Monthly revenue composition',
-            subtitle: 'Illustrative launch economics',
-            child: _RevenueTable(),
+            subtitle: 'Total ${_money(data.revenue.monthlyTotal)}',
+            child: _Table(
+              columns: const ['Revenue stream', 'Transactions', 'Amount'],
+              rows: data.revenue.streams
+                  .map((row) => [
+                        Text(_label(row.stream)),
+                        Text('${row.volume}'),
+                        Text(_money(row.amount),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                      ])
+                  .toList(),
+            ),
           ),
           const SizedBox(height: 20),
           const _Panel(
-            title: 'Unit economics targets',
-            subtitle: 'Thresholds to validate before scaling acquisition',
+            title: 'Unit economics guardrails',
+            subtitle: 'Business targets to validate before scaling',
             child: _UnitEconomics(),
           ),
         ],
       );
 
-  Widget _operations() => _Page(
-        title: 'Operations centre',
-        subtitle: 'Trust, moderation and service-level controls',
-        trailing: OutlinedButton.icon(
-          onPressed: _showPrototypeNotice,
-          icon: const Icon(Icons.history_rounded),
-          label: const Text('Audit log'),
-        ),
-        children: [
-          const _MetricGrid(
-            metrics: [
-              _Metric('Verification backlog', '12', 'Oldest: 2 days',
-                  Icons.fact_check_outlined, Color(0xFFF2EAD7)),
-              _Metric('Listings in review', '19', '4 flagged',
-                  Icons.inventory_outlined, Color(0xFFE5EAF2)),
-              _Metric('Support cases', '7', '2 high priority',
-                  Icons.support_agent_outlined, Color(0xFFFFE6E3)),
-              _Metric('SLA met', '92%', '+3 pts', Icons.timer_outlined,
-                  Color(0xFFE5EEE6)),
+  Widget _operations(AdminDashboardSnapshot data) {
+    final listings = data.operations.listingQueue
+        .where((item) =>
+            _matches('${item.title} ${item.supplier} ${item.category}'))
+        .toList();
+    final support = data.operations.supportQueue
+        .where((item) =>
+            _matches('${item.subject} ${item.organization} ${item.priority}'))
+        .toList();
+    return _Page(
+      title: 'Operations centre',
+      subtitle: 'Server-authorized moderation and support workflows',
+      children: [
+        _MetricGrid([
+          _Metric(
+              'Verification backlog',
+              '${data.operations.verificationBacklog}',
+              'Pending or in review',
+              Icons.fact_check_outlined),
+          _Metric('Listings in review', '${data.operations.listingsInReview}',
+              'Pending publication', Icons.inventory_outlined),
+          _Metric(
+              'Support cases',
+              '${data.operations.supportCases}',
+              '${data.operations.highPriorityCases} high priority',
+              Icons.support_agent_outlined),
+          const _Metric('Audit trail', 'Enabled', 'Every decision recorded',
+              Icons.policy_outlined),
+        ]),
+        const SizedBox(height: 20),
+        _Panel(
+          title: 'Listing moderation',
+          subtitle: '${listings.length} listings await a decision',
+          child: _Table(
+            columns: const [
+              'Listing',
+              'Supplier',
+              'Category',
+              'Submitted',
+              'Actions'
             ],
+            rows: listings
+                .map((row) => [
+                      Text(row.title),
+                      Text(row.supplier),
+                      Text(row.category),
+                      Text(_date(row.createdAt)),
+                      _ActionButtons(
+                        busy: _busyId == row.id,
+                        onApprove: () => _listingDecision(row, 'published'),
+                        onReject: () => _listingDecision(row, 'rejected'),
+                      ),
+                    ])
+                .toList(),
           ),
-          const SizedBox(height: 20),
-          const _Panel(
-            title: 'Operations queue',
-            subtitle: 'Human decisions remain explicit and reviewable',
-            child: _OperationsQueue(),
+        ),
+        const SizedBox(height: 20),
+        _Panel(
+          title: 'Support queue',
+          subtitle: '${support.length} open cases',
+          child: _Table(
+            columns: const [
+              'Priority',
+              'Organization',
+              'Subject',
+              'Opened',
+              'Action'
+            ],
+            rows: support
+                .map((row) => [
+                      _Pill(
+                        label: _label(row.priority),
+                        color:
+                            row.priority == 'urgent' || row.priority == 'high'
+                                ? const Color(0xFFFFE6E3)
+                                : const Color(0xFFF2EAD7),
+                      ),
+                      Text(row.organization.isEmpty
+                          ? 'Unassigned'
+                          : row.organization),
+                      Text(row.subject),
+                      Text(_date(row.createdAt)),
+                      FilledButton.tonal(
+                        onPressed: _busyId == row.id
+                            ? null
+                            : () => _resolveSupport(row),
+                        child: const Text('Resolve'),
+                      ),
+                    ])
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _matches(String text) =>
+      _query.trim().isEmpty ||
+      text.toLowerCase().contains(_query.trim().toLowerCase());
+
+  Future<void> _supplierDecision(
+      AdminVerificationCase item, String decision) async {
+    final reason = decision == 'rejected'
+        ? await _askForNote('Reject supplier', 'Reason for rejection')
+        : null;
+    if (decision == 'rejected' && reason == null) return;
+    await _run(
+      item.id,
+      () => widget.dataSource.reviewSupplier(item.id, decision, reason: reason),
+      'Supplier review saved',
+    );
+  }
+
+  Future<void> _listingDecision(
+      AdminListingReview item, String decision) async {
+    final reason = decision == 'rejected'
+        ? await _askForNote('Reject listing', 'Reason for rejection')
+        : null;
+    if (decision == 'rejected' && reason == null) return;
+    await _run(
+      item.id,
+      () => widget.dataSource.reviewListing(item.id, decision, reason: reason),
+      'Listing review saved',
+    );
+  }
+
+  Future<void> _resolveSupport(AdminSupportCase item) async {
+    final resolution =
+        await _askForNote('Resolve support case', 'Resolution note');
+    if (resolution == null) return;
+    await _run(
+      item.id,
+      () => widget.dataSource.resolveSupportCase(item.id, resolution),
+      'Support case resolved',
+    );
+  }
+
+  Future<String?> _askForNote(String title, String label) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration: InputDecoration(labelText: label),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = controller.text.trim();
+              if (value.length >= 3) Navigator.pop(context, value);
+            },
+            child: const Text('Confirm'),
           ),
         ],
-      );
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
 
-  void _showPrototypeNotice() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Prototype action only — connect authenticated Supabase admin RPCs before enabling changes.',
+  Future<void> _run(
+      String id, Future<void> Function() action, String success) async {
+    setState(() => _busyId = id);
+    try {
+      await action();
+      await _reload();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(success), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The server could not complete this action.'),
+            behavior: SnackBarBehavior.floating,
           ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
 }
 
 class _Page extends StatelessWidget {
-  const _Page({
-    required this.title,
-    required this.subtitle,
-    required this.children,
-    this.trailing,
-  });
-
+  const _Page(
+      {required this.title, required this.subtitle, required this.children});
   final String title;
   final String subtitle;
   final List<Widget> children;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -436,32 +597,13 @@ class _Page extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  runSpacing: 14,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                color: _ink,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -.7,
-                              ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(subtitle, style: const TextStyle(color: _muted)),
-                      ],
-                    ),
-                    if (trailing != null) trailing!,
-                  ],
-                ),
+                Text(title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(color: _ink, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 5),
+                Text(subtitle, style: const TextStyle(color: _muted)),
                 const SizedBox(height: 24),
                 ...children,
               ],
@@ -471,249 +613,64 @@ class _Page extends StatelessWidget {
       );
 }
 
-class _Brand extends StatelessWidget {
-  const _Brand({this.onDark = false, this.compact = false});
-
-  final bool onDark;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: compact ? 34 : 42,
-            height: compact ? 34 : 42,
-            decoration: BoxDecoration(
-              color: onDark ? Colors.white : _green,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(
-              Icons.storefront_rounded,
-              color: onDark ? _green : Colors.white,
-              size: compact ? 19 : 23,
-            ),
-          ),
-          const SizedBox(width: 11),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'susu luma',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: onDark ? Colors.white : _ink,
-                    fontSize: compact ? 18 : 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -.5,
-                  ),
-                ),
-                if (!compact)
-                  Text(
-                    'MARKETPLACE ADMIN',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onDark ? Colors.white60 : _muted,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      );
-}
-
-class _NavigationItem extends StatelessWidget {
-  const _NavigationItem({
-    required this.destination,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _AdminDestination destination;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Material(
-          color: selected
-              ? Colors.white.withValues(alpha: .14)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-              child: Row(
-                children: [
-                  Icon(destination.icon,
-                      color: selected ? Colors.white : Colors.white60,
-                      size: 21),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      destination.label,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: selected ? Colors.white : Colors.white70,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-}
-
-class _PrototypeCard extends StatelessWidget {
-  const _PrototypeCard({this.onDark = false});
-
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: onDark
-              ? Colors.white.withValues(alpha: .09)
-              : const Color(0xFFFFF3D6),
-          borderRadius: BorderRadius.circular(14),
-          border: onDark ? null : Border.all(color: const Color(0xFFF0D899)),
-        ),
-        child: Text(
-          'Prototype data only\nConnect role-gated Supabase admin services before pilot.',
-          style: TextStyle(
-            color: onDark ? Colors.white70 : const Color(0xFF6B4A00),
-            fontSize: 11,
-            height: 1.45,
-          ),
-        ),
-      );
-}
-
-class _NoticeBanner extends StatelessWidget {
-  const _NoticeBanner({
-    this.title = 'Illustrative business metrics',
-    this.message =
-        'Values model the recommended subscription, qualified-lead and featured-listing strategy. They are not live financial results.',
-    this.icon = Icons.insights_outlined,
-  });
-
-  final String title;
-  final String message;
+class _Metric {
+  const _Metric(this.label, this.value, this.note, this.icon);
+  final String label;
+  final String value;
+  final String note;
   final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEAF3EE),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFCAE0D4)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: _green),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 3),
-                  Text(message,
-                      style: const TextStyle(color: _muted, height: 1.45)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
 }
 
 class _MetricGrid extends StatelessWidget {
-  const _MetricGrid({required this.metrics});
-
+  const _MetricGrid(this.metrics);
   final List<_Metric> metrics;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
-          final count = constraints.maxWidth >= 1000
-              ? 4
-              : constraints.maxWidth >= 560
+          final columns = constraints.maxWidth < 620
+              ? 1
+              : constraints.maxWidth < 1000
                   ? 2
-                  : 1;
-          const gap = 14.0;
-          final width = (constraints.maxWidth - gap * (count - 1)) / count;
+                  : 4;
+          final width = (constraints.maxWidth - (columns - 1) * 16) / columns;
           return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: [
-              for (final metric in metrics)
-                SizedBox(width: width, child: _MetricCard(metric))
-            ],
+            spacing: 16,
+            runSpacing: 16,
+            children: metrics
+                .map((metric) =>
+                    SizedBox(width: width, child: _MetricCard(metric: metric)))
+                .toList(),
           );
         },
       );
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard(this.metric);
-
+  const _MetricCard({required this.metric});
   final _Metric metric;
-
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _line),
-        ),
+        decoration: _boxDecoration,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: metric.color,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(metric.icon, color: _green, size: 20),
-                ),
-                const Spacer(),
-                const Icon(Icons.more_horiz_rounded, color: _muted, size: 19),
-              ],
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFE5EEE6),
+                  borderRadius: BorderRadius.circular(11)),
+              child: Icon(metric.icon, color: _green),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 15),
+            Text(metric.label, style: const TextStyle(color: _muted)),
+            const SizedBox(height: 5),
             Text(metric.value,
                 style: const TextStyle(
-                    color: _ink, fontSize: 24, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(metric.label,
-                style: const TextStyle(color: _muted, fontSize: 12)),
-            const SizedBox(height: 9),
-            Text(metric.context,
-                style: const TextStyle(
-                    color: _green, fontSize: 11, fontWeight: FontWeight.w700)),
+                    fontSize: 25, fontWeight: FontWeight.w800, color: _ink)),
+            Text(metric.note,
+                style: const TextStyle(fontSize: 12, color: _muted)),
           ],
         ),
       );
@@ -722,577 +679,401 @@ class _MetricCard extends StatelessWidget {
 class _Panel extends StatelessWidget {
   const _Panel(
       {required this.title, required this.subtitle, required this.child});
-
   final String title;
   final String subtitle;
   final Widget child;
-
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _line),
-        ),
+        decoration: _boxDecoration,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(title,
                 style: const TextStyle(
-                    color: _ink, fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: _muted, fontSize: 12)),
-            const SizedBox(height: 20),
+                    fontSize: 17, fontWeight: FontWeight.w800, color: _ink)),
+            Text(subtitle, style: const TextStyle(color: _muted)),
+            const SizedBox(height: 18),
             child,
           ],
         ),
       );
 }
 
-class _RevenueChart extends StatelessWidget {
-  const _RevenueChart();
-
+class _Table extends StatelessWidget {
+  const _Table({required this.columns, required this.rows});
+  final List<String> columns;
+  final List<List<Widget>> rows;
   @override
-  Widget build(BuildContext context) => const CustomPaint(
-        painter: _BarChartPainter(
-          values: [18, 21, 23, 26, 29, 32.5],
-          labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-        ),
-        size: Size.infinite,
-      );
-}
-
-class _BarChartPainter extends CustomPainter {
-  const _BarChartPainter({required this.values, required this.labels});
-
-  final List<double> values;
-  final List<String> labels;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const top = 12.0;
-    const bottom = 28.0;
-    final usableHeight = size.height - top - bottom;
-    final slot = size.width / values.length;
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
-    final gridPaint = Paint()..color = _line;
-    final barPaint = Paint()..color = _green;
-    final labelPainter = TextPainter(textDirection: TextDirection.ltr);
-
-    for (var i = 0; i <= 4; i++) {
-      final y = top + usableHeight * i / 4;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-    for (var index = 0; index < values.length; index++) {
-      final height = usableHeight * values[index] / maxValue;
-      final left = index * slot + slot * .22;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, top + usableHeight - height, slot * .56, height),
-        const Radius.circular(8),
-      );
-      canvas.drawRRect(rect, barPaint);
-      labelPainter.text = TextSpan(
-        text: labels[index],
-        style: const TextStyle(color: _muted, fontSize: 10),
-      );
-      labelPainter.layout();
-      labelPainter.paint(
-        canvas,
-        Offset(
-            index * slot + (slot - labelPainter.width) / 2, size.height - 18),
-      );
-    }
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) return const _EmptyState();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 28,
+        columns: columns
+            .map((column) => DataColumn(
+                label: Text(column,
+                    style: const TextStyle(fontWeight: FontWeight.w700))))
+            .toList(),
+        rows: rows
+            .map((row) =>
+                DataRow(cells: row.map((cell) => DataCell(cell)).toList()))
+            .toList(),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant _BarChartPainter oldDelegate) =>
-      oldDelegate.values != values || oldDelegate.labels != labels;
 }
 
-class _RevenueMix extends StatelessWidget {
-  const _RevenueMix();
-
+class _RevenueChart extends StatelessWidget {
+  const _RevenueChart(this.points);
+  final List<AdminRevenuePoint> points;
   @override
-  Widget build(BuildContext context) => const Column(
-        children: [
-          _MixRow('Pro subscriptions', 'SLE 20,000', .615, _green),
-          SizedBox(height: 18),
-          _MixRow('Qualified RFQ access', 'SLE 7,500', .231, Color(0xFF4D77A8)),
-          SizedBox(height: 18),
-          _MixRow('Featured placement', 'SLE 5,000', .154, Color(0xFFB48B3C)),
-          SizedBox(height: 20),
-          Divider(color: _line),
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Modelled MRR', style: TextStyle(color: _muted)),
-              Text('SLE 32,500',
-                  style: TextStyle(fontWeight: FontWeight.w800, color: _ink)),
-            ],
-          ),
-        ],
-      );
-}
-
-class _MixRow extends StatelessWidget {
-  const _MixRow(this.label, this.value, this.progress, this.color);
-
-  final String label;
-  final String value;
-  final double progress;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                  child: Text(label, style: const TextStyle(fontSize: 12))),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              minHeight: 8,
-              value: progress,
-              color: color,
-              backgroundColor: _line,
-            ),
-          ),
-        ],
-      );
+  Widget build(BuildContext context) {
+    if (points.isEmpty) {
+      return const _EmptyState(
+          message: 'Revenue history appears after the first recognized event.');
+    }
+    final maximum =
+        points.map((point) => point.amount).fold<double>(0, math.max);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: points
+          .map((point) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(_compactMoney(point.amount),
+                          style: const TextStyle(fontSize: 11, color: _muted)),
+                      const SizedBox(height: 6),
+                      Container(
+                        height:
+                            maximum == 0 ? 4 : 150 * point.amount / maximum + 4,
+                        decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(_month(point.month),
+                          style: const TextStyle(fontSize: 11, color: _muted)),
+                    ],
+                  ),
+                ),
+              ))
+          .toList(),
+    );
+  }
 }
 
 class _PriorityActions extends StatelessWidget {
-  const _PriorityActions();
-
+  const _PriorityActions(this.operations);
+  final AdminOperations operations;
   @override
-  Widget build(BuildContext context) => const Column(
-        children: [
-          _ActionRow(
-              Icons.verified_user_outlined,
-              'Review 12 supplier applications',
-              'Protect marketplace trust · oldest case 2 days',
-              'Review'),
-          Divider(color: _line),
-          _ActionRow(
-              Icons.route_outlined,
-              'Route 18 qualified RFQs',
-              'Construction demand has fewer than 3 matching suppliers',
-              'Route'),
-          Divider(color: _line),
-          _ActionRow(Icons.support_agent_outlined, 'Resolve 2 priority cases',
-              'One delivery exception and one quote dispute', 'Open'),
-        ],
-      );
+  Widget build(BuildContext context) => Column(children: [
+        _Priority('Supplier verification', operations.verificationBacklog,
+            Icons.verified_user_outlined),
+        _Priority('Listing moderation', operations.listingsInReview,
+            Icons.inventory_outlined),
+        _Priority('High priority support', operations.highPriorityCases,
+            Icons.support_agent_outlined),
+      ]);
 }
 
-class _ActionRow extends StatelessWidget {
-  const _ActionRow(this.icon, this.title, this.subtitle, this.action);
-
+class _Priority extends StatelessWidget {
+  const _Priority(this.label, this.count, this.icon);
+  final String label;
+  final int count;
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final String action;
-
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: const Color(0xFFE5EEE6),
-              child: Icon(icon, color: _green, size: 20),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 3),
-                  Text(subtitle,
-                      style: const TextStyle(color: _muted, fontSize: 11)),
-                ],
-              ),
-            ),
-            TextButton(onPressed: () {}, child: Text(action)),
-          ],
-        ),
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+            backgroundColor: const Color(0xFFE5EEE6),
+            child: Icon(icon, color: _green)),
+        title: Text(label),
+        trailing: Text('$count',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
       );
 }
 
-class _DataTableCard extends StatelessWidget {
-  const _DataTableCard({required this.columns, required this.rows});
-
-  final List<String> columns;
-  final List<List<Object>> rows;
-
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.busy,
+    required this.onApprove,
+    required this.onReject,
+    this.onReview,
+  });
+  final bool busy;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+  final VoidCallback? onReview;
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAF8)),
-          columnSpacing: 34,
-          columns: [
-            for (final column in columns) DataColumn(label: Text(column))
-          ],
-          rows: [
-            for (final row in rows)
-              DataRow(
-                cells: [
-                  for (final cell in row)
-                    DataCell(cell is Widget ? cell : Text(cell.toString())),
-                ],
-              ),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) => busy
+      ? const SizedBox.square(
+          dimension: 22, child: CircularProgressIndicator(strokeWidth: 2))
+      : Wrap(spacing: 6, children: [
+          if (onReview != null)
+            TextButton(onPressed: onReview, child: const Text('Review')),
+          IconButton(
+              onPressed: onApprove,
+              tooltip: 'Approve',
+              color: _green,
+              icon: const Icon(Icons.check_circle_outline)),
+          IconButton(
+              onPressed: onReject,
+              tooltip: 'Reject',
+              color: const Color(0xFF9A3E34),
+              icon: const Icon(Icons.cancel_outlined)),
+        ]);
 }
 
 class _PlanGrid extends StatelessWidget {
   const _PlanGrid();
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth >= 860
-              ? (constraints.maxWidth - 36) / 4
-              : constraints.maxWidth >= 500
-                  ? (constraints.maxWidth - 12) / 2
-                  : constraints.maxWidth;
-          return Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: const [
-              _PlanCard('Basic', 'Free', 'Limited listings', '39 suppliers'),
-              _PlanCard('Verified', 'Annual fee', 'Trust badge + review',
-                  '30 suppliers'),
-              _PlanCard(
-                  'Pro', 'SLE 200/mo', 'RFQ alerts + analytics', '31 suppliers',
-                  featured: true),
-              _PlanCard('Enterprise', 'Custom', 'Teams + procurement', 'Pilot'),
-            ].map((plan) => SizedBox(width: width, child: plan)).toList(),
-          );
-        },
-      );
-}
-
-class _PlanCard extends StatelessWidget {
-  const _PlanCard(this.name, this.price, this.benefit, this.usage,
-      {this.featured = false});
-
-  final String name;
-  final String price;
-  final String benefit;
-  final String usage;
-  final bool featured;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: featured ? const Color(0xFFEAF3EE) : const Color(0xFFF8FAF8),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: featured ? _green : _line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                if (featured) ...[
-                  const Spacer(),
-                  const Icon(Icons.star_rounded, color: _green, size: 17),
-                ],
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(price,
-                style: const TextStyle(
-                    color: _green, fontSize: 17, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Text(benefit, style: const TextStyle(color: _muted, fontSize: 11)),
-            const SizedBox(height: 14),
-            Text(usage,
-                style:
-                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      );
-}
-
-class _VerificationQueue extends StatelessWidget {
-  const _VerificationQueue();
-
-  @override
-  Widget build(BuildContext context) => const _DataTableCard(
-        columns: ['Supplier', 'District', 'Submitted', 'Scope', 'Status'],
-        rows: [
-          [
-            'Makeni Agro Hub',
-            'Bombali',
-            'Today',
-            'Business + owner',
-            _StatusPill(
-                label: 'New', color: Color(0xFFE5EAF2), foreground: _ink)
-          ],
-          [
-            'Lion Mountain Tools',
-            'Western Area',
-            'Yesterday',
-            'Business',
-            _StatusPill(
-                label: 'In review', color: Color(0xFFF2EAD7), foreground: _ink)
-          ],
-          [
-            'Bo Fresh Produce',
-            'Bo',
-            '2 days ago',
-            'Renewal',
-            _StatusPill(
-                label: 'Needs evidence',
-                color: Color(0xFFFFE6E3),
-                foreground: _ink)
-          ],
-        ],
-      );
-}
-
-class _RevenueTable extends StatelessWidget {
-  const _RevenueTable();
-
-  @override
-  Widget build(BuildContext context) => const _DataTableCard(
-        columns: ['Stream', 'Volume', 'Price', 'Monthly revenue', 'Share'],
-        rows: [
-          [
-            'Pro subscriptions',
-            '100 suppliers',
-            'SLE 200',
-            'SLE 20,000',
-            '61.5%'
-          ],
-          [
-            'Qualified RFQ access',
-            '300 responses',
-            'SLE 25',
-            'SLE 7,500',
-            '23.1%'
-          ],
-          ['Featured placement', '10 slots', 'SLE 500', 'SLE 5,000', '15.4%'],
-          ['Total modelled MRR', '', '', 'SLE 32,500', '100%'],
-        ],
-      );
-}
-
-class _UnitEconomics extends StatelessWidget {
-  const _UnitEconomics();
-
   @override
   Widget build(BuildContext context) => const Wrap(
         spacing: 12,
         runSpacing: 12,
         children: [
-          _TargetCard('Supplier CAC', '< SLE 450', 'Recover within 3 months'),
-          _TargetCard(
-              'Monthly churn', '< 4%', 'Retain suppliers with real demand'),
-          _TargetCard(
-              'Lead acceptance', '> 60%', 'Only charge for qualified demand'),
-          _TargetCard('Repeat buyers', '> 45%', 'Measure marketplace utility'),
+          _Plan('Basic', 'Free', 'Listings and standard RFQs'),
+          _Plan('Verified', 'SLE 250/mo', 'Trust badge and priority matching'),
+          _Plan('Pro', 'SLE 650/mo', 'Insights and featured placement'),
         ],
       );
 }
 
-class _TargetCard extends StatelessWidget {
-  const _TargetCard(this.label, this.target, this.context);
-
-  final String label;
-  final String target;
-  final String context;
-
+class _Plan extends StatelessWidget {
+  const _Plan(this.name, this.price, this.detail);
+  final String name;
+  final String price;
+  final String detail;
   @override
   Widget build(BuildContext context) => Container(
-        width: 220,
-        padding: const EdgeInsets.all(15),
+        width: 230,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAF8),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: _muted, fontSize: 11)),
-            const SizedBox(height: 6),
-            Text(target,
-                style: const TextStyle(
-                    color: _green, fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 5),
-            Text(this.context,
-                style: const TextStyle(color: _muted, fontSize: 10)),
-          ],
-        ),
+            color: _canvas,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _line)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text(price,
+              style: const TextStyle(
+                  fontSize: 19, color: _green, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(detail, style: const TextStyle(color: _muted)),
+        ]),
       );
 }
 
-class _OperationsQueue extends StatelessWidget {
-  const _OperationsQueue();
-
+class _UnitEconomics extends StatelessWidget {
+  const _UnitEconomics();
   @override
-  Widget build(BuildContext context) => const Column(
+  Widget build(BuildContext context) => const Wrap(
+        spacing: 16,
+        runSpacing: 16,
         children: [
-          _QueueRow('High', 'Order SL-4F72D · delivery exception',
-              'Buyer reported partial delivery · Western Area', '18 min'),
-          Divider(color: _line),
-          _QueueRow('High', 'Quote dispute · unit mismatch',
-              'RFQ requested bags; supplier quoted kilograms', '43 min'),
-          Divider(color: _line),
-          _QueueRow('Review', 'Listing flagged for prohibited claim',
-              'Automated rule requires human classification', '2 hr'),
-          Divider(color: _line),
-          _QueueRow('Normal', 'Supplier verification renewal',
-              'Bo Fresh Produce · evidence expires in 14 days', '1 day'),
+          _Target('Gross margin', '> 75%'),
+          _Target('CAC payback', '< 6 months'),
+          _Target('Supplier churn', '< 4% / mo'),
+          _Target('RFQ response', '> 70%'),
         ],
       );
 }
 
-class _QueueRow extends StatelessWidget {
-  const _QueueRow(this.priority, this.title, this.subtitle, this.age);
-
-  final String priority;
-  final String title;
-  final String subtitle;
-  final String age;
-
+class _Target extends StatelessWidget {
+  const _Target(this.label, this.value);
+  final String label;
+  final String value;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          children: [
-            _StatusPill(
-              label: priority,
-              color: priority == 'High'
-                  ? const Color(0xFFFFE6E3)
-                  : const Color(0xFFE5EAF2),
-              foreground: _ink,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 3),
-                  Text(subtitle,
-                      style: const TextStyle(color: _muted, fontSize: 11)),
-                ],
-              ),
-            ),
-            Text(age, style: const TextStyle(color: _muted, fontSize: 11)),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, color: _muted),
-          ],
+  Widget build(BuildContext context) => SizedBox(
+        width: 180,
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(value,
+              style: const TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w800, color: _green)),
+          subtitle: Text(label),
         ),
       );
 }
 
-class _RangeSelector extends StatelessWidget {
-  const _RangeSelector({required this.selected, required this.onSelected});
-
-  final int selected;
-  final ValueChanged<int> onSelected;
-
+class _Notice extends StatelessWidget {
+  const _Notice({required this.title, required this.message});
+  final String title;
+  final String message;
   @override
-  Widget build(BuildContext context) => SegmentedButton<int>(
-        segments: const [
-          ButtonSegment(value: 0, label: Text('7d')),
-          ButtonSegment(value: 1, label: Text('30d')),
-          ButtonSegment(value: 2, label: Text('90d')),
-        ],
-        selected: {selected},
-        onSelectionChanged: (value) => onSelected(value.first),
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+            color: const Color(0xFFEAF2ED),
+            borderRadius: BorderRadius.circular(16)),
+        child: Row(children: [
+          const Icon(Icons.account_balance_outlined, color: _green),
+          const SizedBox(width: 14),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(message, style: const TextStyle(color: _muted)),
+              ])),
+        ]),
       );
 }
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
+class _Pill extends StatelessWidget {
+  const _Pill({
     required this.label,
-    required this.color,
-    required this.foreground,
+    this.color = const Color(0xFFE5EEE6),
+    this.foreground = _ink,
     this.icon,
   });
-
   final String label;
   final Color color;
   final Color foreground;
   final IconData? icon;
-
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(30)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: foreground),
-              const SizedBox(width: 5),
-            ],
-            Text(label,
-                style: TextStyle(
-                    color: foreground,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700)),
+            color: color, borderRadius: BorderRadius.circular(99)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icon != null) ...[
+            Icon(icon, size: 15, color: foreground),
+            const SizedBox(width: 5),
           ],
+          Text(label,
+              style: TextStyle(
+                  color: foreground,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700)),
+        ]),
+      );
+}
+
+class _Brand extends StatelessWidget {
+  const _Brand({required this.dark});
+  final bool dark;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+              color: dark ? Colors.white : _green,
+              borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.hub_outlined, color: dark ? _green : Colors.white),
+        ),
+        const SizedBox(width: 11),
+        Flexible(
+          child: Text('Susu Luma',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: dark ? Colors.white : _ink,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
+        ),
+      ]);
+}
+
+class _SecurityCard extends StatelessWidget {
+  const _SecurityCard();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Colors.white10, borderRadius: BorderRadius.circular(14)),
+        child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.admin_panel_settings_outlined, color: Colors.white70),
+              SizedBox(height: 8),
+              Text('Protected workspace',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w700)),
+              Text('Server authorization and 2FA required',
+                  style: TextStyle(color: Colors.white60, fontSize: 12)),
+            ]),
+      );
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({this.message = 'No records match this view.'});
+  final String message;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 30),
+        child: Center(
+          child: Column(children: [
+            const Icon(Icons.inbox_outlined, color: _muted),
+            const SizedBox(height: 8),
+            Text(message, style: const TextStyle(color: _muted)),
+          ]),
         ),
       );
 }
 
-class _AdminDestination {
-  const _AdminDestination(this.label, this.icon);
-  final String label;
-  final IconData icon;
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.cloud_off_outlined, size: 42, color: _muted),
+          const SizedBox(height: 12),
+          const Text('Dashboard data is unavailable',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text('Check your session and try again.',
+              style: TextStyle(color: _muted)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry')),
+        ]),
+      );
 }
 
-class _Metric {
-  const _Metric(this.label, this.value, this.context, this.icon, this.color);
-  final String label;
-  final String value;
-  final String context;
-  final IconData icon;
-  final Color color;
-}
+final _boxDecoration = BoxDecoration(
+  color: Colors.white,
+  border: Border.all(color: _line),
+  borderRadius: BorderRadius.circular(18),
+);
 
-class _RfqRow {
-  const _RfqRow(this.reference, this.buyer, this.category, this.value,
-      this.status, this.statusColor);
-  final String reference;
-  final String buyer;
-  final String category;
-  final String value;
-  final String status;
-  final Color statusColor;
-}
-
-const _rfqRows = <_RfqRow>[
-  _RfqRow('SL-8E91A', 'Kallon & Sons', 'Construction', 'SLE 84,000', 'Open',
-      Color(0xFFE5EAF2)),
-  _RfqRow('SL-3BD24', 'Bo Retail Network', 'Agriculture', 'SLE 42,500',
-      'Quoted', Color(0xFFE5EEE6)),
-  _RfqRow('SL-91FC2', 'Makeni Works', 'Equipment', 'SLE 128,000',
-      'Needs routing', Color(0xFFF2EAD7)),
-  _RfqRow('SL-5A110', 'Freetown Traders', 'Metals', 'SLE 66,400', 'Accepted',
-      Color(0xFFE5EEE6)),
-];
+String _money(double value) =>
+    'SLE ${value.toStringAsFixed(value % 1 == 0 ? 0 : 2)}';
+String _compactMoney(double value) => value >= 1000000
+    ? 'SLE ${(value / 1000000).toStringAsFixed(1)}m'
+    : value >= 1000
+        ? 'SLE ${(value / 1000).toStringAsFixed(1)}k'
+        : 'SLE ${value.toStringAsFixed(0)}';
+String _label(String value) => value
+    .split('_')
+    .map((word) =>
+        word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+    .join(' ');
+String _date(DateTime? value) => value == null
+    ? '—'
+    : '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+String _dateTime(DateTime value) =>
+    '${_date(value)} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+String _month(DateTime? value) => value == null
+    ? '—'
+    : const [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ][value.month - 1];

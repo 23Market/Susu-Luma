@@ -60,6 +60,12 @@ Operational alerts should cover lockout spikes, repeated CAPTCHA failure, backup
 
 The `backend-security` CI job type-checks the Edge Function, applies every migration to a fresh local Supabase database, runs database linting and executes the pgTAP security suite in `supabase/tests/database`. This gate verifies the rate-limit boundary, CAPTCHA escalation, server-only function grants, atomic backup-code redemption and AAL2 administrator checks without using a shared backend.
 
+## Admin dashboard data boundary
+
+The dashboard reads one server-built snapshot instead of querying privileged tables from Flutter. Browser requests use `GET /admin/dashboard`; mutations use CSRF-protected `/admin/suppliers/review`, `/admin/listings/review` and `/admin/support/resolve` routes. The central admin middleware verifies the session, platform-admin assignment, and either AAL2 or a short-lived redeemed backup-code grant before dispatch. The Edge Function then calls service-role-only database functions with the verified actor ID.
+
+Android and iOS call authenticated wrapper functions directly. Those wrappers require `is_platform_admin_aal2()` and delegate to the same internal operations. Supplier, listing and support decisions create `audit_events`. Revenue, subscription and support tables grant no direct client access.
+
 ## Password checks
 
 The client provides immediate strength feedback and blocks short, incomplete and common passwords. The auth API independently enforces the same structural rules and queries the Have I Been Pwned range API using k-anonymity. It fails closed if the breach check is unavailable. Supabase password policy and leaked-password protection remain the final enforcement layer for direct provider traffic.

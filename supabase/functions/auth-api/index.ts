@@ -317,7 +317,7 @@ async function handleAdminRoute(
   origin: string,
   route: string,
 ): Promise<Response> {
-  const auth = await authenticated(request, false)
+  const auth = await authenticated(request, request.method !== 'GET')
   if (auth.response) return withCors(auth.response, origin)
   if (!await platformAdmin(auth.user!.id)) return json({ allowed: false }, 403, origin)
   const aal2 = jwtClaim(auth.accessToken!, 'aal') === 'aal2'
@@ -327,6 +327,49 @@ async function handleAdminRoute(
   }
   if (`${request.method} ${route}` === 'GET admin/access') {
     return json({ allowed: true }, 200, origin)
+  }
+  if (`${request.method} ${route}` === 'GET admin/dashboard') {
+    const { data, error } = await admin.rpc('admin_dashboard_snapshot_for', {
+      p_actor_user_id: auth.user!.id,
+    })
+    return error
+      ? json({ error: 'dashboard_unavailable' }, 500, origin)
+      : json({ dashboard: data }, 200, origin)
+  }
+  if (`${request.method} ${route}` === 'POST admin/suppliers/review') {
+    const body = await readJson(request)
+    const { error } = await admin.rpc('admin_review_supplier_for', {
+      p_actor_user_id: auth.user!.id,
+      p_case_id: stringValue(body.caseId),
+      p_decision: stringValue(body.decision),
+      p_reason: nullableString(body.reason),
+    })
+    return error
+      ? json({ error: 'admin_operation_failed' }, 400, origin)
+      : json({ updated: true }, 200, origin)
+  }
+  if (`${request.method} ${route}` === 'POST admin/listings/review') {
+    const body = await readJson(request)
+    const { error } = await admin.rpc('admin_review_listing_for', {
+      p_actor_user_id: auth.user!.id,
+      p_listing_id: stringValue(body.listingId),
+      p_decision: stringValue(body.decision),
+      p_reason: nullableString(body.reason),
+    })
+    return error
+      ? json({ error: 'admin_operation_failed' }, 400, origin)
+      : json({ updated: true }, 200, origin)
+  }
+  if (`${request.method} ${route}` === 'POST admin/support/resolve') {
+    const body = await readJson(request)
+    const { error } = await admin.rpc('admin_resolve_support_case_for', {
+      p_actor_user_id: auth.user!.id,
+      p_case_id: stringValue(body.caseId),
+      p_resolution: stringValue(body.resolution),
+    })
+    return error
+      ? json({ error: 'admin_operation_failed' }, 400, origin)
+      : json({ updated: true }, 200, origin)
   }
   return json({ error: 'not_found' }, 404, origin)
 }
@@ -556,6 +599,11 @@ function normalizeEmail(value: unknown): string {
 
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : ''
+}
+
+function nullableString(value: unknown): string | null {
+  const result = stringValue(value).trim()
+  return result ? result : null
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown>> {
