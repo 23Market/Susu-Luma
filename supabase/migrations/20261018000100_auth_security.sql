@@ -63,7 +63,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  current_time timestamptz := now();
+  v_now timestamptz := now();
   bucket_key text;
   bucket public.auth_rate_buckets%rowtype;
   allowed boolean := true;
@@ -91,9 +91,9 @@ begin
     where key_hash = bucket_key and action = p_action
     for update;
 
-    if bucket.window_started_at <= current_time - interval '15 minutes' then
+    if bucket.window_started_at <= v_now - interval '15 minutes' then
       update public.auth_rate_buckets
-      set window_started_at = current_time,
+      set window_started_at = v_now,
           attempts = 0,
           failures = 0,
           last_failed_at = null,
@@ -103,22 +103,22 @@ begin
     end if;
 
     captcha_required := captcha_required or bucket.failures >= 3;
-    if bucket.locked_until is not null and bucket.locked_until > current_time then
+    if bucket.locked_until is not null and bucket.locked_until > v_now then
       allowed := false;
       retry_after_seconds := greatest(
         retry_after_seconds,
-        ceil(extract(epoch from bucket.locked_until - current_time))::integer
+        ceil(extract(epoch from bucket.locked_until - v_now))::integer
       );
     end if;
 
     if bucket.last_failed_at is not null and bucket.failures > 0 then
       delay_seconds := least(300, power(2, least(bucket.failures - 1, 8))::integer);
-      if bucket.last_failed_at + make_interval(secs => delay_seconds) > current_time then
+      if bucket.last_failed_at + make_interval(secs => delay_seconds) > v_now then
         allowed := false;
         retry_after_seconds := greatest(
           retry_after_seconds,
           ceil(extract(epoch from (
-            bucket.last_failed_at + make_interval(secs => delay_seconds) - current_time
+            bucket.last_failed_at + make_interval(secs => delay_seconds) - v_now
           )))::integer
         );
       end if;
@@ -129,7 +129,7 @@ begin
       retry_after_seconds := greatest(
         retry_after_seconds,
         ceil(extract(epoch from (
-          bucket.window_started_at + interval '15 minutes' - current_time
+          bucket.window_started_at + interval '15 minutes' - v_now
         )))::integer
       );
     elsif allowed then
@@ -221,6 +221,9 @@ $$;
 revoke all on function public.auth_rate_limit_precheck(text, text, text) from public;
 revoke all on function public.auth_rate_limit_record(text, text, text, boolean, text) from public;
 revoke all on function public.redeem_auth_backup_code(uuid, text) from public;
+revoke all on function public.auth_rate_limit_precheck(text, text, text) from anon, authenticated;
+revoke all on function public.auth_rate_limit_record(text, text, text, boolean, text) from anon, authenticated;
+revoke all on function public.redeem_auth_backup_code(uuid, text) from anon, authenticated;
 grant execute on function public.auth_rate_limit_precheck(text, text, text) to service_role;
 grant execute on function public.auth_rate_limit_record(text, text, text, boolean, text) to service_role;
 grant execute on function public.redeem_auth_backup_code(uuid, text) to service_role;
