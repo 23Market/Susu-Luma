@@ -9,34 +9,44 @@ void main() {
       find.bySemanticsLabel('Luma Industrial Marketplace Sierra Leone'),
       findsOneWidget,
     );
-    expect(find.text('Browse categories'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Sample listings'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Sample listings'), findsOneWidget);
+    expect(find.text('Choose a category'), findsOneWidget);
+    expect(find.text('BUILDING'), findsOneWidget);
+    expect(find.text('FARMING'), findsOneWidget);
+    expect(find.text('Listen'), findsOneWidget);
   });
 
   testWidgets('discover tab filters sample products', (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
-    await tester.tap(find.text('Discover').last);
+    await tester.tap(find.text('Find products'));
     await tester.pumpAndSettle();
-    expect(find.text('Discover products'), findsOneWidget);
-    await tester.enterText(find.byType(EditableText).first, 'cocoa');
+    expect(find.text('Browse Sierra Leone listings'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('discover-search')), 'cocoa');
     await tester.pumpAndSettle();
-    expect(find.text('Fresh Cocoa Beans'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('discover-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cocoa Beans'), findsOneWidget);
     expect(find.text('Portland Cement'), findsNothing);
   });
 
   testWidgets('RFQ composer validates and saves a local draft', (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.tap(find.text('Find products'));
     await tester.pumpAndSettle();
-    final requestQuote = find
-        .widgetWithText(OutlinedButton, 'Request quote')
-        .hitTestable()
-        .first;
+    await tester.enterText(
+      find.byKey(const Key('discover-search')),
+      'Portland Cement',
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const Key('discover-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    final requestQuote =
+        find.widgetWithText(OutlinedButton, 'Request quote').first;
     await tester.tap(requestQuote);
     await tester.pumpAndSettle();
 
@@ -71,12 +81,20 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const SusuLumaApp());
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.tap(find.text('Find products'));
     await tester.pumpAndSettle();
-    final requestQuote = find
-        .widgetWithText(OutlinedButton, 'Request quote')
-        .hitTestable()
-        .first;
+    await tester.enterText(
+      find.byKey(const Key('discover-search')),
+      'Portland Cement',
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const Key('discover-list')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    final requestQuote =
+        find.widgetWithText(OutlinedButton, 'Request quote').first;
     await tester.tap(requestQuote);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));

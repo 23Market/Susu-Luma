@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'admin/admin_route_gate.dart';
@@ -21,6 +24,7 @@ Future<void> main() async {
 }
 
 const _green = Color(0xFF176B50);
+const _yellow = Color(0xFFFFC400);
 const _ink = Color(0xFF17251F);
 const _muted = Color(0xFF68766F);
 const _canvas = Color(0xFFF5F7F4);
@@ -82,32 +86,240 @@ class Product {
 
 // Illustrative Sierra Leone-focused sample listings. These are not live offers; verify suppliers, availability and specifications before publication.
 const _products = <Product>[
-  Product(name: 'Portland Cement', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per bag', icon: Icons.foundation_rounded, color: Color(0xFFE6EDE6)),
-  Product(name: 'Iron Rods · 12 mm', category: 'Metals', supplier: 'Salone Steel & Hardware', location: 'Freetown', price: 'Request quote', unit: 'per length', icon: Icons.construction_rounded, color: Color(0xFFE2E9F1)),
-  Product(name: 'Cocoa Beans', category: 'Agriculture', supplier: 'Kono Produce Traders', location: 'Kono District', price: 'Request quote', unit: 'per kg', icon: Icons.grass_rounded, color: Color(0xFFF0E7D8)),
-  Product(name: 'Cassava Flour', category: 'Agriculture', supplier: 'Bo Agro Cooperative', location: 'Bo District', price: 'Request quote', unit: 'per 25 kg sack', icon: Icons.inventory_2_rounded, color: Color(0xFFF2E8C9)),
-  Product(name: 'Palm Oil', category: 'Food & Agro-Processing', supplier: 'Southern Produce Network', location: 'Pujehun District', price: 'Request quote', unit: 'per 20 litre container', icon: Icons.oil_barrel_rounded, color: Color(0xFFF5E8C8)),
-  Product(name: 'Rice · Local Harvest', category: 'Food & Agro-Processing', supplier: 'Rural Rice Traders', location: 'Moyamba District', price: 'Request quote', unit: 'per 50 kg bag', icon: Icons.grain_rounded, color: Color(0xFFF2EAD7)),
-  Product(name: 'Bauxite Ore', category: 'Mining & Minerals', supplier: 'Sierra Mineral Sourcing', location: 'Port Loko District', price: 'Request quote', unit: 'per metric tonne', icon: Icons.landscape_rounded, color: Color(0xFFECE4D8)),
-  Product(name: 'Rutile / Ilmenite Feedstock', category: 'Mining & Minerals', supplier: 'Coastal Minerals Exchange', location: 'Bonthe District', price: 'Request quote', unit: 'per metric tonne', icon: Icons.diamond_outlined, color: Color(0xFFE5E7EB)),
-  Product(name: 'Sawn Timber', category: 'Timber & Wood', supplier: 'Eastern Timber Suppliers', location: 'Kenema District', price: 'Request quote', unit: 'per cubic metre', icon: Icons.forest_rounded, color: Color(0xFFEDE4D6)),
-  Product(name: 'Fresh Fish · Bulk Supply', category: 'Fisheries & Seafood', supplier: 'Western Coastal Fisheries', location: 'Tombo, Western Area Rural', price: 'Request quote', unit: 'per crate', icon: Icons.set_meal_rounded, color: Color(0xFFDDECF0)),
-  Product(name: 'Solar Panels', category: 'Energy & Solar', supplier: 'Salone Solar Trade', location: 'Freetown', price: 'Request quote', unit: 'per panel', icon: Icons.solar_power_rounded, color: Color(0xFFF6EBCB)),
-  Product(name: 'Diesel Generator', category: 'Equipment & Power', supplier: 'Industrial Equipment SL', location: 'Freetown', price: 'Request quote', unit: 'per unit', icon: Icons.electric_bolt_rounded, color: Color(0xFFE5E8EC)),
-  Product(name: 'Water Storage Tanks', category: 'Water & Sanitation', supplier: 'Salone Water Systems', location: 'Makeni, Bombali District', price: 'Request quote', unit: 'per tank', icon: Icons.water_drop_rounded, color: Color(0xFFDDECF0)),
-  Product(name: 'Woven Raffia & Crafts', category: 'Local Crafts & Textiles', supplier: 'Community Craft Collective', location: 'Kailahun District', price: 'Request quote', unit: 'per bundle', icon: Icons.shopping_basket_rounded, color: Color(0xFFEDE4D6)),
-  Product(name: 'Corrugated Roofing Sheets', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per sheet', icon: Icons.roofing_rounded, color: Color(0xFFE6EDE6)),
-  Product(name: 'Plastic Packaging & Sacks', category: 'Packaging & Supplies', supplier: 'National Packaging Traders', location: 'Freetown', price: 'Request quote', unit: 'per bundle', icon: Icons.inventory_2_rounded, color: Color(0xFFE5EAF3)),
-  Product(name: 'Paddy Rice', category: 'Food Crops', supplier: 'Illustrative Rice Supplier', location: 'Bombali District', price: 'Request quote', unit: 'per 50 kg bag', icon: Icons.grain_rounded, color: Color(0xFFF2EAD7)),
-  Product(name: 'Groundnuts', category: 'Food Crops', supplier: 'Illustrative Crop Cooperative', location: 'Tonkolili District', price: 'Request quote', unit: 'per 25 kg sack', icon: Icons.spa_rounded, color: Color(0xFFF0E7D8)),
-  Product(name: 'Coffee Beans', category: 'Cash Crops', supplier: 'Illustrative Cash Crop Trader', location: 'Kailahun District', price: 'Request quote', unit: 'per kg', icon: Icons.coffee_rounded, color: Color(0xFFEDE4D6)),
-  Product(name: 'Pineapples', category: 'Horticulture', supplier: 'Illustrative Produce Grower', location: 'Western Area Rural', price: 'Request quote', unit: 'per crate', icon: Icons.spa_rounded, color: Color(0xFFF6EBCB)),
-  Product(name: 'Tomatoes', category: 'Horticulture', supplier: 'Illustrative Market Gardener', location: 'Bo District', price: 'Request quote', unit: 'per crate', icon: Icons.eco_rounded, color: Color(0xFFF5E8C8)),
-  Product(name: 'Fertilizer', category: 'Agro-Inputs', supplier: 'Illustrative Agricultural Inputs Dealer', location: 'Makeni, Bombali District', price: 'Request quote', unit: 'per 50 kg bag', icon: Icons.grass_rounded, color: Color(0xFFE6EDE6)),
-  Product(name: 'Irrigation Pump', category: 'Farm Machinery', supplier: 'Illustrative Farm Equipment Dealer', location: 'Freetown', price: 'Request quote', unit: 'per unit', icon: Icons.water_rounded, color: Color(0xFFDDECF0)),
-  Product(name: 'Animal Feed', category: 'Livestock & Veterinary', supplier: 'Illustrative Livestock Supplier', location: 'Kenema District', price: 'Request quote', unit: 'per 25 kg bag', icon: Icons.pets_rounded, color: Color(0xFFEDE4D6)),
-  Product(name: 'Rice Milling Machine', category: 'Agro-Processing', supplier: 'Illustrative Processing Equipment Dealer', location: 'Bo District', price: 'Request quote', unit: 'per machine', icon: Icons.precision_manufacturing_rounded, color: Color(0xFFE5E8EC)),
-  Product(name: 'Reusable Produce Crates', category: 'Packaging & Supplies', supplier: 'Illustrative Packaging Supplier', location: 'Freetown', price: 'Request quote', unit: 'per crate', icon: Icons.inventory_2_rounded, color: Color(0xFFE5EAF3)),
+  Product(
+      name: 'Portland Cement',
+      category: 'Construction',
+      supplier: 'Freetown Building Supply',
+      location: 'Western Area',
+      price: 'Request quote',
+      unit: 'per bag',
+      icon: Icons.foundation_rounded,
+      color: Color(0xFFE6EDE6)),
+  Product(
+      name: 'Iron Rods · 12 mm',
+      category: 'Metals',
+      supplier: 'Salone Steel & Hardware',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per length',
+      icon: Icons.construction_rounded,
+      color: Color(0xFFE2E9F1)),
+  Product(
+      name: 'Cocoa Beans',
+      category: 'Agriculture',
+      supplier: 'Kono Produce Traders',
+      location: 'Kono District',
+      price: 'Request quote',
+      unit: 'per kg',
+      icon: Icons.grass_rounded,
+      color: Color(0xFFF0E7D8)),
+  Product(
+      name: 'Cassava Flour',
+      category: 'Agriculture',
+      supplier: 'Bo Agro Cooperative',
+      location: 'Bo District',
+      price: 'Request quote',
+      unit: 'per 25 kg sack',
+      icon: Icons.inventory_2_rounded,
+      color: Color(0xFFF2E8C9)),
+  Product(
+      name: 'Palm Oil',
+      category: 'Food & Agro-Processing',
+      supplier: 'Southern Produce Network',
+      location: 'Pujehun District',
+      price: 'Request quote',
+      unit: 'per 20 litre container',
+      icon: Icons.oil_barrel_rounded,
+      color: Color(0xFFF5E8C8)),
+  Product(
+      name: 'Rice · Local Harvest',
+      category: 'Food & Agro-Processing',
+      supplier: 'Rural Rice Traders',
+      location: 'Moyamba District',
+      price: 'Request quote',
+      unit: 'per 50 kg bag',
+      icon: Icons.grain_rounded,
+      color: Color(0xFFF2EAD7)),
+  Product(
+      name: 'Bauxite Ore',
+      category: 'Mining & Minerals',
+      supplier: 'Sierra Mineral Sourcing',
+      location: 'Port Loko District',
+      price: 'Request quote',
+      unit: 'per metric tonne',
+      icon: Icons.landscape_rounded,
+      color: Color(0xFFECE4D8)),
+  Product(
+      name: 'Rutile / Ilmenite Feedstock',
+      category: 'Mining & Minerals',
+      supplier: 'Coastal Minerals Exchange',
+      location: 'Bonthe District',
+      price: 'Request quote',
+      unit: 'per metric tonne',
+      icon: Icons.diamond_outlined,
+      color: Color(0xFFE5E7EB)),
+  Product(
+      name: 'Sawn Timber',
+      category: 'Timber & Wood',
+      supplier: 'Eastern Timber Suppliers',
+      location: 'Kenema District',
+      price: 'Request quote',
+      unit: 'per cubic metre',
+      icon: Icons.forest_rounded,
+      color: Color(0xFFEDE4D6)),
+  Product(
+      name: 'Fresh Fish · Bulk Supply',
+      category: 'Fisheries & Seafood',
+      supplier: 'Western Coastal Fisheries',
+      location: 'Tombo, Western Area Rural',
+      price: 'Request quote',
+      unit: 'per crate',
+      icon: Icons.set_meal_rounded,
+      color: Color(0xFFDDECF0)),
+  Product(
+      name: 'Solar Panels',
+      category: 'Energy & Solar',
+      supplier: 'Salone Solar Trade',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per panel',
+      icon: Icons.solar_power_rounded,
+      color: Color(0xFFF6EBCB)),
+  Product(
+      name: 'Diesel Generator',
+      category: 'Equipment & Power',
+      supplier: 'Industrial Equipment SL',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per unit',
+      icon: Icons.electric_bolt_rounded,
+      color: Color(0xFFE5E8EC)),
+  Product(
+      name: 'Water Storage Tanks',
+      category: 'Water & Sanitation',
+      supplier: 'Salone Water Systems',
+      location: 'Makeni, Bombali District',
+      price: 'Request quote',
+      unit: 'per tank',
+      icon: Icons.water_drop_rounded,
+      color: Color(0xFFDDECF0)),
+  Product(
+      name: 'Woven Raffia & Crafts',
+      category: 'Local Crafts & Textiles',
+      supplier: 'Community Craft Collective',
+      location: 'Kailahun District',
+      price: 'Request quote',
+      unit: 'per bundle',
+      icon: Icons.shopping_basket_rounded,
+      color: Color(0xFFEDE4D6)),
+  Product(
+      name: 'Corrugated Roofing Sheets',
+      category: 'Construction',
+      supplier: 'Freetown Building Supply',
+      location: 'Western Area',
+      price: 'Request quote',
+      unit: 'per sheet',
+      icon: Icons.roofing_rounded,
+      color: Color(0xFFE6EDE6)),
+  Product(
+      name: 'Plastic Packaging & Sacks',
+      category: 'Packaging & Supplies',
+      supplier: 'National Packaging Traders',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per bundle',
+      icon: Icons.inventory_2_rounded,
+      color: Color(0xFFE5EAF3)),
+  Product(
+      name: 'Paddy Rice',
+      category: 'Food Crops',
+      supplier: 'Illustrative Rice Supplier',
+      location: 'Bombali District',
+      price: 'Request quote',
+      unit: 'per 50 kg bag',
+      icon: Icons.grain_rounded,
+      color: Color(0xFFF2EAD7)),
+  Product(
+      name: 'Groundnuts',
+      category: 'Food Crops',
+      supplier: 'Illustrative Crop Cooperative',
+      location: 'Tonkolili District',
+      price: 'Request quote',
+      unit: 'per 25 kg sack',
+      icon: Icons.spa_rounded,
+      color: Color(0xFFF0E7D8)),
+  Product(
+      name: 'Coffee Beans',
+      category: 'Cash Crops',
+      supplier: 'Illustrative Cash Crop Trader',
+      location: 'Kailahun District',
+      price: 'Request quote',
+      unit: 'per kg',
+      icon: Icons.coffee_rounded,
+      color: Color(0xFFEDE4D6)),
+  Product(
+      name: 'Pineapples',
+      category: 'Horticulture',
+      supplier: 'Illustrative Produce Grower',
+      location: 'Western Area Rural',
+      price: 'Request quote',
+      unit: 'per crate',
+      icon: Icons.spa_rounded,
+      color: Color(0xFFF6EBCB)),
+  Product(
+      name: 'Tomatoes',
+      category: 'Horticulture',
+      supplier: 'Illustrative Market Gardener',
+      location: 'Bo District',
+      price: 'Request quote',
+      unit: 'per crate',
+      icon: Icons.eco_rounded,
+      color: Color(0xFFF5E8C8)),
+  Product(
+      name: 'Fertilizer',
+      category: 'Agro-Inputs',
+      supplier: 'Illustrative Agricultural Inputs Dealer',
+      location: 'Makeni, Bombali District',
+      price: 'Request quote',
+      unit: 'per 50 kg bag',
+      icon: Icons.grass_rounded,
+      color: Color(0xFFE6EDE6)),
+  Product(
+      name: 'Irrigation Pump',
+      category: 'Farm Machinery',
+      supplier: 'Illustrative Farm Equipment Dealer',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per unit',
+      icon: Icons.water_rounded,
+      color: Color(0xFFDDECF0)),
+  Product(
+      name: 'Animal Feed',
+      category: 'Livestock & Veterinary',
+      supplier: 'Illustrative Livestock Supplier',
+      location: 'Kenema District',
+      price: 'Request quote',
+      unit: 'per 25 kg bag',
+      icon: Icons.pets_rounded,
+      color: Color(0xFFEDE4D6)),
+  Product(
+      name: 'Rice Milling Machine',
+      category: 'Agro-Processing',
+      supplier: 'Illustrative Processing Equipment Dealer',
+      location: 'Bo District',
+      price: 'Request quote',
+      unit: 'per machine',
+      icon: Icons.precision_manufacturing_rounded,
+      color: Color(0xFFE5E8EC)),
+  Product(
+      name: 'Reusable Produce Crates',
+      category: 'Packaging & Supplies',
+      supplier: 'Illustrative Packaging Supplier',
+      location: 'Freetown',
+      price: 'Request quote',
+      unit: 'per crate',
+      icon: Icons.inventory_2_rounded,
+      color: Color(0xFFE5EAF3)),
 ];
 
 class MarketplaceShell extends StatefulWidget {
@@ -119,9 +331,12 @@ class MarketplaceShell extends StatefulWidget {
 }
 
 class _MarketplaceShellState extends State<MarketplaceShell> {
+  final FlutterTts _tts = FlutterTts();
   int _tab = 0;
   String _query = '';
   String _category = 'All';
+  bool _krioAudio = false;
+  bool _speaking = false;
   final Set<String> _saved = {};
   final List<String> _rfqs = [];
   final List<String> _messages = [];
@@ -132,6 +347,39 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
         return text.contains(_query.toLowerCase()) &&
             (_category == 'All' || p.category == _category);
       }).toList();
+
+  @override
+  void dispose() {
+    unawaited(_tts.stop());
+    super.dispose();
+  }
+
+  Future<void> _playHomeGuide() async {
+    if (_speaking) {
+      await _tts.stop();
+      if (mounted) setState(() => _speaking = false);
+      return;
+    }
+
+    setState(() => _speaking = true);
+    try {
+      await _tts.stop();
+      await _tts.setLanguage('en-US');
+      await _tts.setSpeechRate(0.42);
+      await _tts.setVolume(1);
+      await _tts.speak(
+        _krioAudio
+            ? 'Tap di Find products button, or tap wan picture for wetin yu de look for. Tap Ask for price for ask wan seller how much. Tap Sell an item for put you business pan Luma.'
+            : 'Tap Find products, or choose a picture for building, farming, tools, or food. Tap Ask for price to request a quote. Tap Sell an item to list a product.',
+      );
+    } on Object {
+      if (mounted) {
+        _notice('Audio guidance is unavailable on this device.');
+      }
+    } finally {
+      if (mounted) setState(() => _speaking = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,21 +407,25 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
       ),
       body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (value) => setState(() => _tab = value),
+        selectedIndex: switch (_tab) {
+          2 => 1,
+          3 => 2,
+          4 => 3,
+          _ => 0,
+        },
+        onDestinationSelected: (value) =>
+            setState(() => _tab = const [0, 2, 3, 4][value]),
         destinations: const [
           NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home_rounded),
               label: 'Home'),
           NavigationDestination(
-              icon: Icon(Icons.search_rounded), label: 'Discover'),
-          NavigationDestination(
-              icon: Icon(Icons.request_quote_outlined), label: 'RFQs'),
+              icon: Icon(Icons.inventory_2_outlined), label: 'Orders'),
           NavigationDestination(
               icon: Icon(Icons.forum_outlined), label: 'Messages'),
           NavigationDestination(
-              icon: Icon(Icons.business_center_outlined), label: 'Business'),
+              icon: Icon(Icons.person_outline_rounded), label: 'Account'),
         ],
       ),
     );
@@ -182,247 +434,290 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
   Widget _home() => ListView(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
         children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: _green,
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                colors: [_green, Color(0xFF0D503B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .15),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Text(
-                    'BUY · SELL · SOURCE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      letterSpacing: 1.3,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Business starts\nwith a better connection.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 27,
-                    height: 1.12,
-                    letterSpacing: -.7,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Discover suppliers and source products across Sierra Leone.',
-                  style: TextStyle(
-                    color: Color(0xFFE2F0E9),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => setState(() => _tab = 1),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: _green,
-                  ),
-                  icon: const Icon(Icons.search_rounded),
-                  label: const Text('Find products'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Browse categories',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  color: _ink,
-                ),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _tab = 1),
-                child: const Text('See all'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 96,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _categoryTile(
-                  'Construction',
-                  Icons.foundation_rounded,
-                  const Color(0xFFE5EEE6),
-                ),
-                _categoryTile(
-                  'Agriculture',
-                  Icons.eco_rounded,
-                  const Color(0xFFF2EAD7),
-                ),
-                _categoryTile(
-                  'Metals',
-                  Icons.handyman_rounded,
-                  const Color(0xFFE1EAF2),
-                ),
-                _categoryTile('Equipment & Power', Icons.precision_manufacturing_rounded, const Color(0xFFECE4F2)),
-                _categoryTile('Mining & Minerals', Icons.landscape_rounded, const Color(0xFFECE4D8)),
-                _categoryTile('Timber & Wood', Icons.forest_rounded, const Color(0xFFEDE4D6)),
-                _categoryTile('Fisheries & Seafood', Icons.set_meal_rounded, const Color(0xFFDDECF0)),
-                _categoryTile('Food & Agro-Processing', Icons.factory_rounded, const Color(0xFFF5E8C8)),
-                _categoryTile('Energy & Solar', Icons.solar_power_rounded, const Color(0xFFF6EBCB)),
-                _categoryTile('Food Crops', Icons.grain_rounded, const Color(0xFFF2EAD7)),
-                _categoryTile('Cash Crops', Icons.coffee_rounded, const Color(0xFFEDE4D6)),
-                _categoryTile('Horticulture', Icons.spa_rounded, const Color(0xFFF6EBCB)),
-                _categoryTile('Agro-Inputs', Icons.grass_rounded, const Color(0xFFE6EDE6)),
-                _categoryTile('Farm Machinery', Icons.agriculture_rounded, const Color(0xFFE5E8EC)),
-                _categoryTile('Livestock & Veterinary', Icons.pets_rounded, const Color(0xFFEDE4D6)),
-                _categoryTile('Agro-Processing', Icons.precision_manufacturing_rounded, const Color(0xFFE5E8EC)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Row(
             children: [
               Expanded(
-                child: Text(
-                  'Featured sourcing',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: _ink,
-                  ),
+                child: SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('English')),
+                    ButtonSegment(value: true, label: Text('Krio')),
+                  ],
+                  selected: {_krioAudio},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) =>
+                      setState(() => _krioAudio = selection.first),
                 ),
               ),
-              Text(
-                'Sample listings',
-                style: TextStyle(color: _muted, fontSize: 11),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: _playHomeGuide,
+                icon: Icon(
+                  _speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                ),
+                label: Text(_speaking ? 'Stop' : 'Listen'),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ..._products.take(3).map((product) => _productCard(product)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          Semantics(
+            button: true,
+            label: 'Find products',
+            child: InkWell(
+              onTap: () => setState(() => _tab = 1),
+              borderRadius: BorderRadius.circular(22),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 76),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7F2EC),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: _green,
+                      child: Icon(Icons.search_rounded,
+                          color: Colors.white, size: 28),
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        'Find products',
+                        style: TextStyle(
+                          color: _ink,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_rounded, color: _green),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           const Text(
-            'Prototype notice: listings and supplier details are illustrative sample data, not live offers.',
-            style: TextStyle(fontSize: 11, color: _muted, height: 1.4),
+            'Choose a category',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
+              color: _ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.28,
+            children: [
+              _visualCategoryTile(
+                label: 'BUILDING',
+                category: 'Construction',
+                icon: Icons.foundation_rounded,
+                background: const Color(0xFFFFD54F),
+              ),
+              _visualCategoryTile(
+                label: 'FARMING',
+                category: 'Agriculture',
+                icon: Icons.eco_rounded,
+                background: const Color(0xFFD9EEE1),
+              ),
+              _visualCategoryTile(
+                label: 'TOOLS',
+                category: 'Equipment & Power',
+                icon: Icons.handyman_rounded,
+                background: const Color(0xFFFAD9D6),
+              ),
+              _visualCategoryTile(
+                label: 'FOOD',
+                category: 'Food & Agro-Processing',
+                icon: Icons.rice_bowl_rounded,
+                background: const Color(0xFFFFE9A9),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _primaryHomeAction(
+                  label: 'ASK FOR\nPRICE',
+                  icon: Icons.request_quote_rounded,
+                  color: _green,
+                  foreground: Colors.white,
+                  onTap: () {
+                    setState(() => _tab = 1);
+                    _notice('Choose a product to request a quote.');
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _primaryHomeAction(
+                  label: 'SELL AN\nITEM',
+                  icon: Icons.storefront_rounded,
+                  color: _yellow,
+                  foreground: _green,
+                  onTap: () {
+                    setState(() => _tab = 4);
+                    _notice(
+                        'Sign in with a business account to list products.');
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       );
 
-  Widget _categoryTile(String title, IconData icon, Color color) => Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: InkWell(
-          onTap: () {
-            setState(() {
-              _category = title;
-              _tab = 1;
-            });
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-              width: 105,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE7ECE8))),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Icon(icon, color: _green, size: 19)),
-                    Text(title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w700))
-                  ]))));
+  Widget _visualCategoryTile({
+    required String label,
+    required String category,
+    required IconData icon,
+    required Color background,
+  }) =>
+      Semantics(
+        button: true,
+        label: label,
+        child: InkWell(
+          onTap: () => setState(() {
+            _category = category;
+            _tab = 1;
+          }),
+          borderRadius: BorderRadius.circular(22),
+          child: Ink(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: _green, size: 48),
+                const SizedBox(height: 9),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: _green,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: .4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 
-  Widget _discover() =>
-      ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
-        const Text('Browse Sierra Leone listings',
-            style: TextStyle(
-                fontWeight: FontWeight.w800, fontSize: 25, color: _ink)),
-        const SizedBox(height: 6),
-        const Text('Explore local materials, produce and industrial supplies by category and district.',
-            style: TextStyle(color: _muted)),
-        const SizedBox(height: 18),
-        TextField(
-            decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Product, material or supplier'),
-            onChanged: (value) => setState(() => _query = value)),
-        const SizedBox(height: 14),
-        Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              'All',
-              'Construction',
-              'Agriculture',
-              'Food Crops',
-              'Cash Crops',
-              'Horticulture',
-              'Agro-Inputs',
-              'Farm Machinery',
-              'Livestock & Veterinary',
-              'Agro-Processing',
-              'Metals',
-              'Equipment & Power',
-              'Mining & Minerals',
-              'Timber & Wood',
-              'Fisheries & Seafood',
-              'Food & Agro-Processing',
-              'Energy & Solar',
-              'Water & Sanitation',
-              'Local Crafts & Textiles',
-              'Packaging & Supplies'
-            ]
-                .map((c) => ChoiceChip(
-                        label: Text(c),
-                        selected: _category == c,
-                        onSelected: (_) => setState(() => _category = c))
-                    .copyWith())
-                .toList()),
-        const SizedBox(height: 12),
-        Text('${_filtered.length} illustrative sample listings',
-            style: const TextStyle(color: _muted, fontSize: 12)),
-        const SizedBox(height: 8),
-        if (_filtered.isEmpty)
-          const Padding(
-              padding: EdgeInsets.all(28),
-              child: Text(
-                  'No sample listings match. Try another search or category.')),
-        ..._filtered.map(_productCard),
-      ]);
+  Widget _primaryHomeAction({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required Color foreground,
+    required VoidCallback onTap,
+  }) =>
+      Semantics(
+        button: true,
+        label: label.replaceAll('\n', ' '),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Ink(
+            height: 104,
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: foreground, size: 34),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 16,
+                      height: 1.05,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _discover() => ListView(
+          key: const Key('discover-list'),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            const Text('Browse Sierra Leone listings',
+                style: TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 25, color: _ink)),
+            const SizedBox(height: 6),
+            const Text(
+                'Explore local materials, produce and industrial supplies by category and district.',
+                style: TextStyle(color: _muted)),
+            const SizedBox(height: 18),
+            TextField(
+                key: const Key('discover-search'),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search_rounded),
+                    hintText: 'Product, material or supplier'),
+                onChanged: (value) => setState(() => _query = value)),
+            const SizedBox(height: 14),
+            Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  'All',
+                  'Construction',
+                  'Agriculture',
+                  'Food Crops',
+                  'Cash Crops',
+                  'Horticulture',
+                  'Agro-Inputs',
+                  'Farm Machinery',
+                  'Livestock & Veterinary',
+                  'Agro-Processing',
+                  'Metals',
+                  'Equipment & Power',
+                  'Mining & Minerals',
+                  'Timber & Wood',
+                  'Fisheries & Seafood',
+                  'Food & Agro-Processing',
+                  'Energy & Solar',
+                  'Water & Sanitation',
+                  'Local Crafts & Textiles',
+                  'Packaging & Supplies'
+                ]
+                    .map((c) => ChoiceChip(
+                            label: Text(c),
+                            selected: _category == c,
+                            onSelected: (_) => setState(() => _category = c))
+                        .copyWith())
+                    .toList()),
+            const SizedBox(height: 12),
+            Text('${_filtered.length} illustrative sample listings',
+                style: const TextStyle(color: _muted, fontSize: 12)),
+            const SizedBox(height: 8),
+            if (_filtered.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.all(28),
+                  child: Text(
+                      'No sample listings match. Try another search or category.')),
+            ..._filtered.map(_productCard),
+          ]);
 
   Widget _productCard(Product p) => Container(
       margin: const EdgeInsets.only(bottom: 12),
