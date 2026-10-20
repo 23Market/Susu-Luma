@@ -82,7 +82,7 @@ class Product {
 
 // Illustrative Sierra Leone-focused sample listings. These are not live offers; verify suppliers, availability and specifications before publication.
 const _products = <Product>[
-  Product(name: 'Portland Cement', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per bag', icon: Icons.foundation_rounded, color: Color(0xFFE6EDE6), verified: true),
+  Product(name: 'Portland Cement', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per bag', icon: Icons.foundation_rounded, color: Color(0xFFE6EDE6)),
   Product(name: 'Iron Rods · 12 mm', category: 'Metals', supplier: 'Salone Steel & Hardware', location: 'Freetown', price: 'Request quote', unit: 'per length', icon: Icons.construction_rounded, color: Color(0xFFE2E9F1)),
   Product(name: 'Cocoa Beans', category: 'Agriculture', supplier: 'Kono Produce Traders', location: 'Kono District', price: 'Request quote', unit: 'per kg', icon: Icons.grass_rounded, color: Color(0xFFF0E7D8)),
   Product(name: 'Cassava Flour', category: 'Agriculture', supplier: 'Bo Agro Cooperative', location: 'Bo District', price: 'Request quote', unit: 'per 25 kg sack', icon: Icons.inventory_2_rounded, color: Color(0xFFF2E8C9)),
@@ -292,6 +292,13 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
                 _categoryTile('Fisheries & Seafood', Icons.set_meal_rounded, const Color(0xFFDDECF0)),
                 _categoryTile('Food & Agro-Processing', Icons.factory_rounded, const Color(0xFFF5E8C8)),
                 _categoryTile('Energy & Solar', Icons.solar_power_rounded, const Color(0xFFF6EBCB)),
+                _categoryTile('Food Crops', Icons.grain_rounded, const Color(0xFFF2EAD7)),
+                _categoryTile('Cash Crops', Icons.coffee_rounded, const Color(0xFFEDE4D6)),
+                _categoryTile('Horticulture', Icons.spa_rounded, const Color(0xFFF6EBCB)),
+                _categoryTile('Agro-Inputs', Icons.grass_rounded, const Color(0xFFE6EDE6)),
+                _categoryTile('Farm Machinery', Icons.agriculture_rounded, const Color(0xFFE5E8EC)),
+                _categoryTile('Livestock & Veterinary', Icons.pets_rounded, const Color(0xFFEDE4D6)),
+                _categoryTile('Agro-Processing', Icons.precision_manufacturing_rounded, const Color(0xFFE5E8EC)),
               ],
             ),
           ),
