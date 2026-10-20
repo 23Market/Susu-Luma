@@ -5,7 +5,10 @@ import 'package:susu_luma/main.dart';
 void main() {
   testWidgets('shows the Susu Luma marketplace home', (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
-    expect(find.text('susu luma'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Luma Industrial Marketplace Sierra Leone'),
+      findsOneWidget,
+    );
     expect(find.text('Browse categories'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Sample listings'),

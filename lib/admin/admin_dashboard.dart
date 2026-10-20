@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../widgets/luma_brand.dart';
 import 'admin_dashboard_data.dart';
 
 const _green = Color(0xFF195C43);
@@ -959,25 +960,16 @@ class _Brand extends StatelessWidget {
   const _Brand({required this.dark});
   final bool dark;
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-              color: dark ? Colors.white : _green,
-              borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.hub_outlined, color: dark ? _green : Colors.white),
+  Widget build(BuildContext context) => Container(
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: dark ? null : Border.all(color: _line),
         ),
-        const SizedBox(width: 11),
-        Flexible(
-          child: Text('Susu Luma',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: dark ? Colors.white : _ink,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800)),
-        ),
-      ]);
+        child: const LumaBrand(height: 46),
+      );
 }
 
 class _SecurityCard extends StatelessWidget {

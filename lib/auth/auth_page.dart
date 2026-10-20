@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../services/auth_api_client.dart';
 import '../services/captcha_client.dart';
+import '../widgets/luma_brand.dart';
 import 'mfa_page.dart';
 import 'password_policy.dart';
 import 'password_recovery_pages.dart';
@@ -157,7 +158,7 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.storefront_rounded, size: 44),
+                        const LumaBrand(compact: true, height: 92),
                         const SizedBox(height: 18),
                         TextField(
                           controller: _emailController,

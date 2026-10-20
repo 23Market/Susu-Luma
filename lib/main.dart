@@ -11,6 +11,7 @@ import 'config/app_config.dart';
 import 'models/rfq_draft.dart';
 import 'services/backend_runtime.dart';
 import 'services/auth_api_client.dart';
+import 'widgets/luma_brand.dart';
 import 'widgets/rfq_composer.dart';
 
 Future<void> main() async {
@@ -34,7 +35,7 @@ class SusuLumaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Susu Luma',
+        title: 'Luma Industrial Marketplace',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -157,29 +158,7 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 20,
-        title: Row(children: [
-          Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                  color: _green, borderRadius: BorderRadius.circular(11)),
-              child: const Icon(Icons.storefront_rounded,
-                  color: Colors.white, size: 21)),
-          const SizedBox(width: 10),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('susu luma',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                    letterSpacing: -0.6)),
-            Text('SIERRA LEONE BUSINESS',
-                style: TextStyle(
-                    fontSize: 9,
-                    letterSpacing: 1.2,
-                    color: _muted,
-                    fontWeight: FontWeight.w700))
-          ]),
-        ]),
+        title: const LumaBrand(height: 45),
         actions: [
           IconButton(
               tooltip: 'Notifications',
