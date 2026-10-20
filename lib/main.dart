@@ -80,45 +80,24 @@ class Product {
   final bool verified;
 }
 
-// Clearly labelled sample listings; replace with reviewed marketplace data at integration gate.
+// Illustrative Sierra Leone-focused sample listings. These are not live offers; verify suppliers, availability and specifications before publication.
 const _products = <Product>[
-  Product(
-      name: 'Portland Cement',
-      category: 'Construction',
-      supplier: 'Freetown Building Supply',
-      location: 'Western Area',
-      price: 'Request quote',
-      unit: 'per bag',
-      icon: Icons.foundation_rounded,
-      color: Color(0xFFE6EDE6),
-      verified: true),
-  Product(
-      name: 'Fresh Cocoa Beans',
-      category: 'Agriculture',
-      supplier: 'Kono Produce Traders',
-      location: 'Kono District',
-      price: 'Request quote',
-      unit: 'per kg',
-      icon: Icons.grass_rounded,
-      color: Color(0xFFF0E7D8)),
-  Product(
-      name: 'Iron Rods · 12 mm',
-      category: 'Metals',
-      supplier: 'Salone Steel & Hardware',
-      location: 'Freetown',
-      price: 'Request quote',
-      unit: 'per length',
-      icon: Icons.construction_rounded,
-      color: Color(0xFFE2E9F1)),
-  Product(
-      name: 'Cassava Flour',
-      category: 'Agriculture',
-      supplier: 'Bo Agro Cooperative',
-      location: 'Bo District',
-      price: 'Request quote',
-      unit: 'per 25 kg sack',
-      icon: Icons.inventory_2_rounded,
-      color: Color(0xFFF2E8C9)),
+  Product(name: 'Portland Cement', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per bag', icon: Icons.foundation_rounded, color: Color(0xFFE6EDE6), verified: true),
+  Product(name: 'Iron Rods · 12 mm', category: 'Metals', supplier: 'Salone Steel & Hardware', location: 'Freetown', price: 'Request quote', unit: 'per length', icon: Icons.construction_rounded, color: Color(0xFFE2E9F1)),
+  Product(name: 'Cocoa Beans', category: 'Agriculture', supplier: 'Kono Produce Traders', location: 'Kono District', price: 'Request quote', unit: 'per kg', icon: Icons.grass_rounded, color: Color(0xFFF0E7D8)),
+  Product(name: 'Cassava Flour', category: 'Agriculture', supplier: 'Bo Agro Cooperative', location: 'Bo District', price: 'Request quote', unit: 'per 25 kg sack', icon: Icons.inventory_2_rounded, color: Color(0xFFF2E8C9)),
+  Product(name: 'Palm Oil', category: 'Food & Agro-Processing', supplier: 'Southern Produce Network', location: 'Pujehun District', price: 'Request quote', unit: 'per 20 litre container', icon: Icons.oil_barrel_rounded, color: Color(0xFFF5E8C8)),
+  Product(name: 'Rice · Local Harvest', category: 'Food & Agro-Processing', supplier: 'Rural Rice Traders', location: 'Moyamba District', price: 'Request quote', unit: 'per 50 kg bag', icon: Icons.grain_rounded, color: Color(0xFFF2EAD7)),
+  Product(name: 'Bauxite Ore', category: 'Mining & Minerals', supplier: 'Sierra Mineral Sourcing', location: 'Port Loko District', price: 'Request quote', unit: 'per metric tonne', icon: Icons.landscape_rounded, color: Color(0xFFECE4D8)),
+  Product(name: 'Rutile / Ilmenite Feedstock', category: 'Mining & Minerals', supplier: 'Coastal Minerals Exchange', location: 'Bonthe District', price: 'Request quote', unit: 'per metric tonne', icon: Icons.diamond_outlined, color: Color(0xFFE5E7EB)),
+  Product(name: 'Sawn Timber', category: 'Timber & Wood', supplier: 'Eastern Timber Suppliers', location: 'Kenema District', price: 'Request quote', unit: 'per cubic metre', icon: Icons.forest_rounded, color: Color(0xFFEDE4D6)),
+  Product(name: 'Fresh Fish · Bulk Supply', category: 'Fisheries & Seafood', supplier: 'Western Coastal Fisheries', location: 'Tombo, Western Area Rural', price: 'Request quote', unit: 'per crate', icon: Icons.set_meal_rounded, color: Color(0xFFDDECF0)),
+  Product(name: 'Solar Panels', category: 'Energy & Solar', supplier: 'Salone Solar Trade', location: 'Freetown', price: 'Request quote', unit: 'per panel', icon: Icons.solar_power_rounded, color: Color(0xFFF6EBCB)),
+  Product(name: 'Diesel Generator', category: 'Equipment & Power', supplier: 'Industrial Equipment SL', location: 'Freetown', price: 'Request quote', unit: 'per unit', icon: Icons.electric_bolt_rounded, color: Color(0xFFE5E8EC)),
+  Product(name: 'Water Storage Tanks', category: 'Water & Sanitation', supplier: 'Salone Water Systems', location: 'Makeni, Bombali District', price: 'Request quote', unit: 'per tank', icon: Icons.water_drop_rounded, color: Color(0xFFDDECF0)),
+  Product(name: 'Woven Raffia & Crafts', category: 'Local Crafts & Textiles', supplier: 'Community Craft Collective', location: 'Kailahun District', price: 'Request quote', unit: 'per bundle', icon: Icons.shopping_basket_rounded, color: Color(0xFFEDE4D6)),
+  Product(name: 'Corrugated Roofing Sheets', category: 'Construction', supplier: 'Freetown Building Supply', location: 'Western Area', price: 'Request quote', unit: 'per sheet', icon: Icons.roofing_rounded, color: Color(0xFFE6EDE6)),
+  Product(name: 'Plastic Packaging & Sacks', category: 'Packaging & Supplies', supplier: 'National Packaging Traders', location: 'Freetown', price: 'Request quote', unit: 'per bundle', icon: Icons.inventory_2_rounded, color: Color(0xFFE5EAF3)),
 ];
 
 class MarketplaceShell extends StatefulWidget {
@@ -297,11 +276,12 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
                   Icons.handyman_rounded,
                   const Color(0xFFE1EAF2),
                 ),
-                _categoryTile(
-                  'Equipment',
-                  Icons.precision_manufacturing_rounded,
-                  const Color(0xFFECE4F2),
-                ),
+                _categoryTile('Equipment & Power', Icons.precision_manufacturing_rounded, const Color(0xFFECE4F2)),
+                _categoryTile('Mining & Minerals', Icons.landscape_rounded, const Color(0xFFECE4D8)),
+                _categoryTile('Timber & Wood', Icons.forest_rounded, const Color(0xFFEDE4D6)),
+                _categoryTile('Fisheries & Seafood', Icons.set_meal_rounded, const Color(0xFFDDECF0)),
+                _categoryTile('Food & Agro-Processing', Icons.factory_rounded, const Color(0xFFF5E8C8)),
+                _categoryTile('Energy & Solar', Icons.solar_power_rounded, const Color(0xFFF6EBCB)),
               ],
             ),
           ),
@@ -371,11 +351,11 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
 
   Widget _discover() =>
       ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
-        const Text('Discover products',
+        const Text('Browse Sierra Leone listings',
             style: TextStyle(
                 fontWeight: FontWeight.w800, fontSize: 25, color: _ink)),
         const SizedBox(height: 6),
-        const Text('Find the right supplier for your business.',
+        const Text('Explore local materials, produce and industrial supplies by category and district.',
             style: TextStyle(color: _muted)),
         const SizedBox(height: 18),
         TextField(
@@ -392,7 +372,15 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
               'Construction',
               'Agriculture',
               'Metals',
-              'Equipment'
+              'Equipment & Power',
+              'Mining & Minerals',
+              'Timber & Wood',
+              'Fisheries & Seafood',
+              'Food & Agro-Processing',
+              'Energy & Solar',
+              'Water & Sanitation',
+              'Local Crafts & Textiles',
+              'Packaging & Supplies'
             ]
                 .map((c) => ChoiceChip(
                         label: Text(c),
@@ -401,7 +389,7 @@ class _MarketplaceShellState extends State<MarketplaceShell> {
                     .copyWith())
                 .toList()),
         const SizedBox(height: 12),
-        Text('${_filtered.length} sample listings',
+        Text('${_filtered.length} illustrative sample listings',
             style: const TextStyle(color: _muted, fontSize: 12)),
         const SizedBox(height: 8),
         if (_filtered.isEmpty)
