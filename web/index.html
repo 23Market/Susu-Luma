@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Luma Industrial Marketplace — Sierra Leone's B2B marketplace for buyers and suppliers.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Luma">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Luma Industrial Marketplace</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script>
+    window.susuLumaTurnstileToken = function (siteKey) {
+      return new Promise(function (resolve, reject) {
+        let waited = 0;
+        const start = function () {
+          if (!window.turnstile) {
+            waited += 100;
+            if (waited >= 10000) return reject(new Error('Turnstile unavailable'));
+            return window.setTimeout(start, 100);
+          }
+          const host = document.createElement('div');
+          host.setAttribute('aria-label', 'Security challenge');
+          host.style.position = 'fixed';
+          host.style.left = '50%';
+          host.style.top = '50%';
+          host.style.transform = 'translate(-50%, -50%)';
+          host.style.zIndex = '2147483647';
+          document.body.appendChild(host);
+          const cleanup = function () { host.remove(); };
+          window.turnstile.render(host, {
+            sitekey: siteKey,
+            theme: 'auto',
+            appearance: 'interaction-only',
+            callback: function (token) { cleanup(); resolve(token); },
+            'error-callback': function () { cleanup(); reject(new Error('Challenge failed')); },
+            'expired-callback': function () { cleanup(); reject(new Error('Challenge expired')); }
+          });
+        };
+        start();
+      });
+    };
+  </script>
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

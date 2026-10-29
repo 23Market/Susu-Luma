@@ -1,6 +1,6 @@
 -- Susu Luma foundation schema (draft; review and test before applying to any shared project).
 -- This migration deliberately does not create wallet, escrow, lending or settlement tables.
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create type public.listing_status as enum ('draft', 'pending_review', 'published', 'paused', 'rejected', 'archived');
 create type public.price_mode as enum ('fixed', 'quote_only', 'indicative');
@@ -29,6 +29,15 @@ create table public.organization_memberships (
   member_role text not null check (member_role in ('owner', 'admin', 'buyer', 'seller', 'staff')),
   created_at timestamptz not null default now(),
   primary key (organization_id, user_id)
+);
+
+-- Platform administrators are provisioned only through a trusted operational
+-- process. Clients cannot list or modify administrator assignments; access is
+-- evaluated by the server-side AAL2 helper added by the security migration.
+create table public.platform_admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_by uuid references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now()
 );
 
 create table public.supplier_verification_cases (
@@ -175,6 +184,7 @@ create table public.audit_events (
 -- reviewed RPCs and role-specific policies are implemented and tested.
 alter table public.organizations enable row level security;
 alter table public.organization_memberships enable row level security;
+alter table public.platform_admins enable row level security;
 alter table public.supplier_verification_cases enable row level security;
 alter table public.listings enable row level security;
 alter table public.rfqs enable row level security;
@@ -197,8 +207,82 @@ create policy organization_read_member on public.organizations
       where m.organization_id = id and m.user_id = (select auth.uid()))
   );
 
-create policy organization_create_self on public.organizations
-  for insert to authenticated with check (created_by = (select auth.uid()));
+create or replace function public.is_platform_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.platform_admins administrator
+    where administrator.user_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.is_platform_admin() from public;
+grant execute on function public.is_platform_admin() to authenticated;
+
+-- Creates the organisation and its owner membership atomically. This avoids an
+-- organisation that its creator cannot access if the second insert fails.
+create or replace function public.create_organization(
+  organization_legal_name text,
+  organization_display_name text,
+  organization_district text default null,
+  organization_locality text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := auth.uid();
+  organization_id uuid;
+begin
+  if caller_id is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+  if organization_legal_name is null or
+      length(trim(organization_legal_name)) not between 2 and 180 then
+    raise exception 'legal name must contain 2 to 180 characters' using errcode = '22023';
+  end if;
+  if organization_display_name is null or
+      length(trim(organization_display_name)) not between 2 and 120 then
+    raise exception 'display name must contain 2 to 120 characters' using errcode = '22023';
+  end if;
+
+  insert into public.organizations (
+    legal_name,
+    display_name,
+    district,
+    locality,
+    created_by
+  ) values (
+    trim(organization_legal_name),
+    trim(organization_display_name),
+    nullif(trim(organization_district), ''),
+    nullif(trim(organization_locality), ''),
+    caller_id
+  ) returning id into organization_id;
+
+  insert into public.organization_memberships (
+    organization_id,
+    user_id,
+    member_role
+  ) values (
+    organization_id,
+    caller_id,
+    'owner'
+  );
+
+  return organization_id;
+end;
+$$;
+
+revoke all on function public.create_organization(text, text, text, text) from public;
+grant execute on function public.create_organization(text, text, text, text) to authenticated;
 
 create policy listing_read_published on public.listings
   for select to anon, authenticated using (status = 'published');

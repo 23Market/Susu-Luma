@@ -10,7 +10,7 @@ Flutter-first mobile marketplace for business buyers and suppliers in Sierra Leo
 - Buyer–supplier inquiry messaging
 - Quote acceptance and order coordination
 - Delivery milestones, reporting and support
-- Operations/admin tooling planned as a separate responsive web console
+- Responsive operations/admin dashboard for supplier plans, RFQs, verification, revenue modelling and service queues
 
 ## Recommended architecture
 
@@ -21,6 +21,7 @@ Flutter-first mobile marketplace for business buyers and suppliers in Sierra Leo
 - **Private buckets** for verification documents and order evidence; time-limited signed access after authorization.
 - **Environments:** local/dev, staging and production separated. Secrets managed outside source control.
 - **Observability:** privacy-minimised events, audit trail for privileged actions, crash reporting and operational alerts.
+- **Authentication:** web sessions terminate at a same-origin auth API using Secure, HttpOnly, SameSite=Strict cookies; native sessions use Android Keystore/iOS Keychain storage. Admin access requires a server-authorised role and AAL2 MFA.
 
 ## Financial/regulatory boundary
 
@@ -35,14 +36,34 @@ MVP supports discovery, RFQs, quotes and order/fulfilment coordination only. No 
 
 ## Current scaffold status
 
-The initial commit introduces a lightweight Flutter app shell and a draft database migration. Screens currently use sample data and do not connect to a backend. No Supabase project, credentials, payment provider or live integrations have been configured.
+The repository contains Android, iOS and web runner projects around a shared Flutter codebase. The marketplace catalogue still uses local sample data. The admin dashboard is connected in code to the Supabase reporting and moderation API: it reads live RFQ, supplier, revenue and operations data and can review suppliers, moderate listings and resolve support cases. Authentication remains disabled unless valid build-time configuration is supplied. No shared Supabase project or payment provider has been configured from this repository.
+
+The admin dashboard is available through the Business profile screen or the `/admin` route on web. Its financial figures come from recognized `revenue_events`; plan prices and unit-economics thresholds are business targets rather than financial results. Web reads and mutations pass through the same-origin auth API. Native builds use AAL2-protected database functions. Every moderation mutation rechecks platform-admin membership on the server and writes an audit event.
 
 ## Local development
 
 1. Install the Flutter stable SDK and an Android toolchain.
 2. Run `flutter pub get`.
 3. Run `flutter analyze` and `flutter test`.
-4. Run `flutter run` on an Android emulator/device.
+4. Run `flutter run` on an Android emulator/device, iOS simulator/device, or browser.
+
+To connect an approved non-production Supabase project, provide its HTTPS URL and publishable client key at build or run time:
+
+```sh
+flutter run \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+The app deliberately stays in offline prototype mode when either value is absent or invalid. Never supply a Supabase service-role key to a Flutter build.
+
+For web deployment, configure `AUTH_API_BASE_URL` and `TURNSTILE_SITE_KEY`, deploy `supabase/functions/auth-api`, and reverse proxy the auth path on the same HTTPS origin. Follow [docs/auth-security.md](docs/auth-security.md); a direct browser-to-Supabase session is deliberately disabled on web.
+
+Release builds:
+
+- Android: `flutter build appbundle --release` for Play Store delivery or `flutter build apk --release` for direct installation.
+- iOS: `flutter build ipa --release` on macOS with Xcode and configured Apple signing.
+- Web: `flutter build web --release`.
 
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
