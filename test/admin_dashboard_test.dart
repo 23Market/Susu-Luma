@@ -30,16 +30,158 @@ void main() {
     expect(find.text('Subscription'), findsOneWidget);
     expect(find.text('SLE 25000'), findsOneWidget);
   });
+
+  testWidgets('renders each operational section and filters visible queues',
+      (tester) async {
+    await showDashboard(tester);
+
+    await tester.tap(find.text('Marketplace'));
+    await tester.pumpAndSettle();
+    expect(find.text('Marketplace activity'), findsOneWidget);
+    expect(find.text('SL-RFQ-101'), findsOneWidget);
+
+    await tester.tap(find.text('Suppliers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Supplier growth'), findsOneWidget);
+    expect(find.text('Kono Trade'), findsOneWidget);
+    expect(find.text('SLE 650/mo'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'does-not-exist');
+    await tester.pumpAndSettle();
+    expect(find.text('No records match this view.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '');
+    await tester.tap(find.text('Operations'));
+    await tester.pumpAndSettle();
+    expect(find.text('Operations centre'), findsOneWidget);
+    expect(find.text('Listing moderation'), findsOneWidget);
+    expect(find.text('Support queue'), findsOneWidget);
+  });
+
+  testWidgets('executes supplier, listing and support decisions',
+      (tester) async {
+    final source = FakeAdminDataSource(fixture());
+    await showDashboard(tester, dataSource: source);
+
+    await tester.tap(find.text('Suppliers'));
+    await tester.pumpAndSettle();
+    tester
+        .widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.check_circle_outline).first,
+        )
+        .onPressed!();
+    await tester.pumpAndSettle();
+    expect(source.supplierDecisions, ['case-1:approved:']);
+    expect(find.text('Supplier review saved'), findsOneWidget);
+
+    await tester.tap(find.text('Operations'));
+    await tester.pumpAndSettle();
+    tester
+        .widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.cancel_outlined).first,
+        )
+        .onPressed!();
+    await tester.pumpAndSettle();
+    expect(find.text('Reject listing'), findsOneWidget);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Reason for rejection'), 'Wrong item');
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+    expect(source.listingDecisions, ['listing-1:rejected:Wrong item']);
+
+    tester
+        .widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Resolve'),
+        )
+        .onPressed!();
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Resolution note'), 'Issue resolved');
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+    expect(source.supportResolutions, ['support-1:Issue resolved']);
+  });
+
+  testWidgets('shows a retry state when dashboard loading fails',
+      (tester) async {
+    final source = FakeAdminDataSource(fixture())..failFetch = true;
+    await showDashboard(tester, dataSource: source, useInitialSnapshot: false);
+    await tester.pumpAndSettle();
+    expect(find.text('Dashboard data is unavailable'), findsOneWidget);
+
+    source.failFetch = false;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text('Business overview'), findsOneWidget);
+  });
+
+  test('dashboard parsing uses safe defaults for malformed payloads', () {
+    final dashboard = AdminDashboardSnapshot.fromJson({
+      'generatedAt': 'not-a-date',
+      'overview': {'monthlyRevenue': '12.5', 'qualifiedRfqs': '3'},
+      'marketplace': {'recentRfqs': 'not-a-list'},
+      'suppliers': <String, Object?>{},
+      'revenue': <String, Object?>{},
+      'operations': <String, Object?>{},
+    });
+
+    expect(dashboard.overview.monthlyRevenue, 12.5);
+    expect(dashboard.overview.qualifiedRfqs, 3);
+    expect(dashboard.marketplace.recentRfqs, isEmpty);
+    expect(const AdminDashboardException('denied').toString(), 'denied');
+  });
 }
 
-Future<void> showDashboard(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(1400, 1000);
+Future<void> showDashboard(
+  WidgetTester tester, {
+  AdminDashboardDataSource? dataSource,
+  bool useInitialSnapshot = true,
+}) async {
+  tester.view.physicalSize = const Size(2000, 1400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
-    MaterialApp(home: AdminDashboard(initialSnapshot: fixture())),
+    MaterialApp(
+      home: AdminDashboard(
+        dataSource: dataSource ?? FakeAdminDataSource(fixture()),
+        initialSnapshot: useInitialSnapshot ? fixture() : null,
+      ),
+    ),
   );
+}
+
+class FakeAdminDataSource implements AdminDashboardDataSource {
+  FakeAdminDataSource(this.snapshot);
+
+  final AdminDashboardSnapshot snapshot;
+  bool failFetch = false;
+  final supplierDecisions = <String>[];
+  final listingDecisions = <String>[];
+  final supportResolutions = <String>[];
+
+  @override
+  Future<AdminDashboardSnapshot> fetch() async {
+    if (failFetch) throw const AdminDashboardException('unavailable');
+    return snapshot;
+  }
+
+  @override
+  Future<void> reviewSupplier(String caseId, String decision,
+      {String? reason}) async {
+    supplierDecisions.add('$caseId:$decision:${reason ?? ''}');
+  }
+
+  @override
+  Future<void> reviewListing(String listingId, String decision,
+      {String? reason}) async {
+    listingDecisions.add('$listingId:$decision:${reason ?? ''}');
+  }
+
+  @override
+  Future<void> resolveSupportCase(String caseId, String resolution) async {
+    supportResolutions.add('$caseId:$resolution');
+  }
 }
 
 AdminDashboardSnapshot fixture() => AdminDashboardSnapshot.fromJson({

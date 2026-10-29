@@ -102,4 +102,83 @@ void main() {
     expect(find.text('My RFQs'), findsNothing);
     expect(find.textContaining('Portland Cement ·'), findsNothing);
   });
+
+  testWidgets('category shortcuts apply the matching catalogue filter',
+      (tester) async {
+    await tester.pumpWidget(const SusuLumaApp());
+    await tester.tap(find.text('BUILDING'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Browse Sierra Leone listings'), findsOneWidget);
+    final construction = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'Construction'),
+    );
+    expect(construction.selected, isTrue);
+  });
+
+  testWidgets('principal actions open quote discovery and business account',
+      (tester) async {
+    await tester.pumpWidget(const SusuLumaApp());
+    await tester.drag(
+      find.byType(ListView).first,
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('ASK FOR'));
+    await tester.pumpAndSettle();
+    expect(find.text('Browse Sierra Leone listings'), findsOneWidget);
+    expect(find.text('Choose a product to request a quote.'), findsOneWidget);
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(ListView).first,
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('SELL AN'));
+    await tester.pumpAndSettle();
+    expect(find.text('Business profile'), findsOneWidget);
+  });
+
+  testWidgets('bottom navigation exposes orders, messages and account',
+      (tester) async {
+    await tester.pumpWidget(const SusuLumaApp());
+
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(find.text('My RFQs'), findsOneWidget);
+    expect(find.text('Your quote requests will appear here.'), findsOneWidget);
+
+    await tester.tap(find.text('Messages'));
+    await tester.pumpAndSettle();
+    expect(
+        find.text('Supplier conversations will appear here.'), findsOneWidget);
+
+    await tester.tap(find.text('Account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Business profile'), findsOneWidget);
+  });
+
+  testWidgets('Krio audio failure is explained without blocking navigation',
+      (tester) async {
+    await tester.pumpWidget(const SusuLumaApp());
+    await tester.tap(find.text('Krio'));
+    await tester.tap(find.text('Listen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Krio'), findsOneWidget);
+    expect(find.text('Find products'), findsOneWidget);
+  });
+
+  testWidgets('notification placeholder gives clear feedback', (tester) async {
+    await tester.pumpWidget(const SusuLumaApp());
+    await tester.tap(find.byTooltip('Notifications'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Notifications will be available after backend integration.'),
+      findsOneWidget,
+    );
+  });
 }

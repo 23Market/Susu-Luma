@@ -525,35 +525,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<String?> _askForNote(String title, String label) async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
+    return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 2,
-          maxLines: 4,
-          decoration: InputDecoration(labelText: label),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = controller.text.trim();
-              if (value.length >= 3) Navigator.pop(context, value);
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      builder: (context) => _NoteDialog(title: title, label: label),
     );
-    controller.dispose();
-    return result;
   }
 
   Future<void> _run(
@@ -580,6 +555,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
       if (mounted) setState(() => _busyId = null);
     }
   }
+}
+
+class _NoteDialog extends StatefulWidget {
+  const _NoteDialog({required this.title, required this.label});
+
+  final String title;
+  final String label;
+
+  @override
+  State<_NoteDialog> createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<_NoteDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text(widget.title),
+        content: TextField(
+          controller: _controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 4,
+          decoration: InputDecoration(labelText: widget.label),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = _controller.text.trim();
+              if (value.length >= 3) Navigator.pop(context, value);
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      );
 }
 
 class _Page extends StatelessWidget {
