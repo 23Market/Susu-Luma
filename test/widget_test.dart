@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:susu_luma/main.dart';
 
@@ -20,8 +21,11 @@ void main() {
     expect(find.text('Portland Cement'), findsNothing);
   });
 
-  testWidgets('request quote creates a local draft and warns backend is not connected', (tester) async {
+  testWidgets(
+      'request quote creates a local draft and warns backend is not connected',
+      (tester) async {
     await tester.pumpWidget(const SusuLumaApp());
+    await tester.ensureVisible(find.text('Request quote').first);
     await tester.tap(find.text('Request quote').first);
     await tester.pumpAndSettle();
     expect(find.text('My RFQs'), findsOneWidget);
