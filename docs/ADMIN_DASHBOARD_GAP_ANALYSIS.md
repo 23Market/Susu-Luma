@@ -336,6 +336,54 @@ Each module below needs separate frontend/backend issues. API paths are **propos
 **Proposed contracts:** `GET /admin/system/health`, `GET /admin/system/incidents`, `GET /admin/system/recovery-evidence`.  
 **Acceptance:** health distinguishes internal faults from third-party outages; recovery claims are backed by a non-production restore drill.
 
+### ADM-13 — Listing, category & attribute administration (P0)
+
+This module closes the P0 gap between catalogue moderation requirements and the original ADM breakdown. Listing reports remain in ADM-05; moderation decisions and taxonomy administration belong here.
+
+**Frontend**
+- Moderation queue for draft, pending-review, published, paused, rejected and archived listings.
+- Listing detail with supplier organisation, completeness checks, media/evidence, category, attributes, price mode, currency, units and history.
+- Actions: approve/publish, request changes, reject, pause, restore and archive; require reason where specified.
+- Category and attribute administration with controlled values, required fields and effective dates; prevent destructive taxonomy edits from silently invalidating existing listings.
+
+**Backend**
+- Permission-scoped queue/detail and category/attribute reads.
+- Validated listing state transitions; only authorized reviewers can publish, pause, reject or restore.
+- Version/audit record for moderation actions, taxonomy changes and before/after values.
+- Referential integrity and compatibility rules for category/attribute changes.
+- Public discovery exposes published listings only; supplier private drafts and moderation evidence remain private.
+
+**Proposed contracts:** `GET /admin/listings`, `GET /admin/listings/{id}`, `POST /admin/listings/{id}/moderation-decision`, `GET /admin/categories`, `POST /admin/categories`, `PATCH /admin/categories/{id}`, `GET /admin/attributes`, `POST /admin/attributes`.
+
+**Acceptance**
+- Only authorized staff can make moderation decisions or edit taxonomy.
+- Every decision records actor, timestamp, reason and prior/new state.
+- Published listings remain discoverable across organisations; private drafts and moderation evidence do not.
+- Category/attribute changes are validated and do not silently corrupt existing listing data.
+- Listing reports in ADM-05 link to the relevant listing and moderation history.
+
+### ADM-14 — Audit log viewer & governed access (P0)
+
+**Frontend**
+- Searchable audit event table with server-side pagination and filters for time range, actor, action, entity type, entity ID and outcome.
+- Detail view shows event metadata, reason, correlation/reference identifiers and before/after values where recorded.
+- Read-only interface; no edit/delete controls for audit events.
+
+**Backend**
+- Permission-scoped audit read contract with strict query bounds and field minimization.
+- Append-only audit storage for privileged actions; prevent ordinary client roles from modifying or deleting events.
+- Record sensitive audit-log reads/exports where required by approved policy.
+- Restrict PII and secrets from event metadata.
+
+**Proposed contracts:** `GET /admin/audit-events`, `GET /admin/audit-events/{id}`, `POST /admin/audit-exports`.
+
+**Acceptance**
+- Only explicitly authorized roles can read audit events.
+- Filters and pagination are server-side and bounded.
+- Events are immutable to application-facing roles.
+- Sensitive values and credentials are never exposed in event payloads.
+- Audit access and export are traceable.
+
 ## 6. Shared interface and API standards
 
 ### Frontend standards
@@ -394,7 +442,7 @@ Mandatory end-to-end scenarios from the PRD should include:
 6. Payment is reported without provider confirmation; state remains pending/unverified and no paid badge appears.
 7. Supplier records dispatch and partial delivery; buyer opens issue; admin reviews evidence; transitions retain actor/time.
 8. Admin suspends supplier/listing; discovery visibility changes but historical order records remain available to authorized parties.
-9. Cross-organisation access attempts against listing, RFQ, message, verification document and order are denied and security events logged.
+9. Negative cross-organisation tests deny unauthorized access to private RFQs, messages, verification documents and orders, and to unpublished listings. Positive tests confirm that published listings are discoverable across organisations and that explicitly authorized RFQ recipients and order participants can access their permitted records. Denials and sensitive access are logged where policy requires.
 10. Backup is restored in non-production and documented RPO/RTO is measured.
 
 Release gates:
@@ -422,8 +470,8 @@ Do not silently resolve these in code:
 
 ## 10. Delivery sequence
 
-1. Confirm G1 requirements baseline and decisions needed for G2.
-2. Approve data model, role/permission matrix, audit model and API contracts.
+1. Resolve documentation review findings; confirm G1 requirements baseline and record explicit decisions or owned deferrals before G2.
+2. Approve data model, role/permission matrix, audit model and API contracts; include ADM-13 listing/category moderation and ADM-14 audit viewer.
 3. Establish admin shell, navigation, auth and role-aware empty states (Frontend) alongside schema/RLS/auth foundations (Backend).
 4. Deliver supplier verification and listing moderation.
 5. Deliver RFQ and quotation operations.
@@ -437,9 +485,9 @@ Do not silently resolve these in code:
 
 ## 11. GitHub work item breakdown
 
-Create separate issues, linked by feature ID. Suggested epics:
-- **Frontend epic:** Admin console shell and all ADM-01..ADM-12 screens/interactions.
-- **Backend epic:** Admin data/API/RLS/audit foundations and all ADM-01..ADM-12 service capabilities.
+Create separate issues, linked by feature ID. ADM-13 covers listing/category/attribute administration; ADM-14 covers audit-log viewing and governed access. Suggested epics:
+- **Frontend epic:** Admin console shell and all ADM-01..ADM-14 screens/interactions.
+- **Backend epic:** Admin data/API/RLS/audit foundations and all ADM-01..ADM-14 service capabilities.
 - **Integration epic:** contract registry, environments, CI contract tests and critical E2E journeys.
 
 For each ADM feature, create one frontend issue and one backend issue; create an integration issue when the feature has cross-boundary behavior. Include the ADM identifier in every issue title and use the workstream labels `susu-luma-frontend`, `susu-luma-backend`, `susu-luma-integration` when those labels are available in the repository. Until labels are created, keep the exact workstream identifier in each issue title/body.
