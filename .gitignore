@@ -1,0 +1,30 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+secrets/
+*.pem
+*.p12
+
+# Supabase local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
