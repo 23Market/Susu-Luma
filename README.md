@@ -49,3 +49,11 @@ Before connecting Supabase, create separate dev/staging/prod projects, review th
 ## Waterfall gates
 
 G0 initiation/feasibility → G1 requirements baseline → G2 UX/architecture/security design → G3 build/component verification → G4 integration/system tests → G5 UAT/security/operational readiness → G6 controlled pilot → G7 operations/change control. Each gate requires documented approval; production remains NO-GO until required evidence is complete.
+
+# Current implementation status
+
+See [BUILD_STATUS.md](docs/BUILD_STATUS.md) for delivered code, verification limits
+and remaining stages. A responsive development console is available at `/admin`;
+it has no live data adapter or privileged actions. This remains a development
+scaffold and is not ready for pilot or production.
+
