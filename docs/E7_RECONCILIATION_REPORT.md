@@ -44,7 +44,7 @@ CI evidence (check-run IDs; URL form `https://github.com/23Market/Susu-Luma/runs
 | F5 | CI never runs on `work/**`, and PRs not based on `main` get no checks (`flutter.yml` triggers on push to `main` and PRs to `main` only). The E7 branch has **no check runs**. | workflow file; check-runs empty at `37cd904`. | `work/**` added to the push trigger in this PR. |
 | F6 | `docs/BUILD_STATUS.md` (PR #6) records that its author could not run format or DB tests locally (no Docker). The `database-security` CI job on that head is nonetheless **green**. | `docs/BUILD_STATUS.md`; check run `131494273398`. | Treated as the baseline CI signal for the two existing migrations. |
 | F7 | The E7 checkpoint describes PR #6 as "planning/admin gap analysis, not an implemented admin backend". PR #6 also ships a real migration, pgTAP test and CI job. | PR #6 file list. | Noted; no change to the other branch. |
-| F8 | **Admin console technology is unresolved**: README says "separate responsive web console"; PR #6 builds `lib/admin` in Flutter with widget-test acceptance (#72); PR #75 is a static HTML prototype. | README, PR #6/#75 file lists. | **Escalated** (blocker B1). Not decided here. |
+| F8 | **Admin console technology was unresolved**: README says "separate responsive web console"; PR #6 builds `lib/admin` in Flutter with widget-test acceptance (#72); PR #75 is a static HTML prototype. | README, PR #6/#75 file lists. | **RESOLVED by Product Owner decision, 18 Nov 2026: separate web console** (`docs/decisions/2026-11-18-admin-console-and-pilot-geography.md`; issue #7 comment 6964124275). Knock-on: #72 and PR #6's `lib/admin` no longer match; their owners must revise. Nothing changed in them. Web framework and hosting still undecided. |
 
 ## 5. Reconciliation of Product Owner decisions, issue #7, PRD and gates
 
@@ -58,10 +58,10 @@ Decision slots refer to the #7 decision record (D1 to D11).
 | Delivery dispute window 72 h after buyer-confirmed receipt | D6 | Fills window and "buyer confirms" | Escalation path; local-counsel wording check |
 | Re-verification every 12 months or earlier on risk; independent second reviewer (high-risk approvals, policy exceptions, rejected-to-approved); no self-approval; immutable history | D2 | Fills validity and second reviewer | **Exact evidence document list**; definition of "high risk" (see B7) |
 | Pilot caps: 150 buyers, 50 verified suppliers | not in #7 | New | Needs recording in #7 |
-| **Pilot geography: Western Area Urban and Rural only** | D9 | **Conflicts** with the owner's D9 answer of 18 districts | **Escalated** (B5). Reconcilable reading: location data = 18 districts; pilot launch = Western Area. Not decided silently. |
+| ~~Pilot geography: Western Area Urban and Rural only~~ | D9 | **Superseded by Product Owner decision, 18 Nov 2026: pilot = 18 districts and their areas** (16 in force + Bandajuma and Kpanguma, which are proposed, not in force) | **Open:** the areas list (no official source supplied; wards vs chiefdoms not chosen); handling of the two proposed districts; **Security/Legal review of the wider footprint (directive requires it for material scope changes; no reviewer assigned).** Caps (150 buyers, 50 suppliers) unchanged. |
 | D7 support hours/SLA, D8 analytics, D10 retention, D11 prohibited goods | D7, D8, D10, D11 | **Still blank** | Owner/Ops/Legal values |
 
-Provenance caveat: these rule values come from the directive. They are treated as owner-provided via the directive but are **not yet recorded on #7**, so they are **not a G1 sign-off**.
+Provenance: these rule values come from the directive. On 18 Nov 2026 the Product Owner approved recording them, and they were **posted to #7** (comment 6964124275). They are owner decisions, **not a G1 sign-off**: no specialist or stakeholder approval exists and no #7 checkbox was ticked.
 
 Gate register (`docs/waterfall-gate-register.md`) is unchanged and remains authoritative: **G0 open, G1 open, G2 in progress / not approved, G3–G5 not evidenced, G6 not authorised, G7 not evidenced.** Owner decisions are not specialist or stakeholder sign-offs. **No gate is marked passed by this report.**
 
@@ -83,5 +83,5 @@ Outstanding sign-offs (none obtained): sponsor and Product Owner naming (G0); PR
 ## 7. Next implementation actions
 
 1. Independent human review of the secure-foundation PR; read the CI `database-security` result for that branch (authoritative; local runs are approximations).
-2. Product Owner decisions: admin console technology (B1), pilot geography reading (B5), and values for D2/D3/D4/D6/D7/D8/D10/D11, then record on #7.
+2. Product Owner decisions still open: areas source file and layer (wards or chiefdoms), handling of the two proposed districts, Security/Legal reviewers for the wider pilot footprint, the D2 evidence list and "high risk" definition, and values for D3 (buyer picks), D4 (cancellation), D6 (escalation, counsel check), D7, D8, D10, D11. **Resolved 18 Nov:** admin console = separate web console (B1); pilot = 18 districts and areas (B5, scope review still open); directive rule values recorded on #7.
 3. Provision an isolated Supabase dev project (cost and ownership approval needed, B2) so staging verification and backup-restore testing can start.
