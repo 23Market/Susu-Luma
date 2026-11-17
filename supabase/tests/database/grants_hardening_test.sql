@@ -68,7 +68,8 @@ select set_eq(
       and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')$$,
   array['create_organization_with_owner', 'submit_supplier_verification', 'review_supplier_verification',
         'flag_supplier_for_early_review', 'reviewer_list_verification_cases', 'reviewer_list_verification_decisions',
-        'authorize_evidence_access', 'supplier_is_verified', 'grant_platform_role', 'revoke_platform_role'],
+        'authorize_evidence_access', 'supplier_is_verified', 'grant_platform_role', 'revoke_platform_role',
+        'my_platform_access'],
   'authenticated can execute exactly the reviewed public RPCs');
 
 select set_eq(

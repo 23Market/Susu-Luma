@@ -1,4 +1,6 @@
--- ROLLBACK for 20261117000100_secure_foundation.sql
+-- ROLLBACK for 20261117000100_secure_foundation.sql AND 20261118000100_verification_risk_policy.sql
+-- (the second migration is stacked on the first; there is no partial rollback of the second alone:
+-- on a disposable database, drop it and re-apply the migrations you want).
 --
 -- DISPOSABLE DEVELOPMENT DATABASES ONLY. This is deliberately NOT in supabase/migrations
 -- so the Supabase CLI never applies it. It drops tables and columns that hold data
@@ -23,6 +25,8 @@ do $$ begin
 end $$;
 
 -- RPCs
+drop function if exists public.my_platform_access();
+drop function if exists public.review_supplier_verification(uuid, text, text, text, boolean, text, text);
 drop function if exists public.revoke_platform_role(uuid, text);
 drop function if exists public.grant_platform_role(uuid, text);
 drop function if exists public.expire_lapsed_verifications();
@@ -41,6 +45,7 @@ drop policy if exists verification_evidence_insert_own_org on storage.objects;
 delete from storage.buckets where id = 'verification-evidence';
 
 -- Verification workflow
+drop trigger if exists supplier_verification_cases_protect_risk on public.supplier_verification_cases;
 drop policy if exists verification_case_read_org on public.supplier_verification_cases;
 drop table if exists public.verification_decisions;
 drop index if exists public.supplier_verification_one_open_case;
@@ -51,6 +56,8 @@ alter table public.supplier_verification_cases
   add constraint supplier_verification_cases_status_check
   check (status in ('pending', 'in_review', 'approved', 'rejected', 'expired'));
 alter table public.supplier_verification_cases
+  drop column if exists second_review_required,
+  drop column if exists risk_reason,
   drop column if exists risk_level,
   drop column if exists first_reviewer_id;
 

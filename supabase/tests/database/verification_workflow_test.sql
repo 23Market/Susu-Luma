@@ -191,7 +191,8 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"33333333-0000-0000-0000-000000000011","role":"authenticated","aal":"aal2"}';
 select is(
   public.review_supplier_verification(current_setting('luma.case_o2')::uuid, 'approve',
-    'Documents consistent; flagged high risk', 'Business registration', false, 'high'),
+    'Documents consistent; flagged high risk', 'Business registration', false, 'high',
+    'New trader with unusual order volume'),
   'awaiting_second_review', 'high-risk approval waits for a second reviewer');
 set local role anon;
 select is(public.supplier_is_verified('44444444-0000-0000-0000-000000000002'), false,
@@ -298,7 +299,7 @@ select is(public.supplier_is_verified('44444444-0000-0000-0000-000000000001'), f
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"33333333-0000-0000-0000-000000000012","role":"authenticated","aal":"aal2"}';
 select throws_ok(
-  $$select public.flag_supplier_for_early_review(current_setting('luma.case_o1')::uuid, 'again')$$,
+  $$select public.flag_supplier_for_early_review(current_setting('luma.case_o1')::uuid, 'flagging a second time')$$,
   '55000', 'only an approved case can be flagged (status in_review)', 'only approved cases can be flagged');
 set local request.jwt.claims = '{"sub":"33333333-0000-0000-0000-000000000011","role":"authenticated","aal":"aal2"}';
 select is(public.review_supplier_verification(current_setting('luma.case_o1')::uuid, 'approve',

@@ -1,7 +1,7 @@
 # Secure Supabase foundation (E7 Phase 2–3, backend)
 
 Status: **DRAFT for independent review. Not applied to any shared or production database.**
-Migration: `supabase/migrations/20261117000100_secure_foundation.sql` (additive; stacked on PR #6's `20261112000100_listing_submission_guard.sql`).
+Migrations: `supabase/migrations/20261117000100_secure_foundation.sql` (additive; stacked on PR #6's `20261112000100_listing_submission_guard.sql`) and `supabase/migrations/20261118000100_verification_risk_policy.sql` (B7: risk policy and the web-console access contract; see `docs/VERIFICATION_RISK_POLICY.md`).
 Gate impact: **none claimed.** G0/G1/G2 stay as recorded in `docs/waterfall-gate-register.md`. Nothing here adds wallet, escrow, custody, settlement or a payment gateway.
 
 ## What it adds
@@ -20,7 +20,7 @@ Gate impact: **none claimed.** G0/G1/G2 stay as recorded in `docs/waterfall-gate
 
 - Staff roles require an **aal2 (MFA) JWT**: `has_platform_role` returns false otherwise.
 - **No self-approval / no conflicts:** the case submitter and any member of the supplier organisation can never review, flag or open evidence for that case (even if they hold a reviewer role).
-- **Independent second reviewer** is required when the case is high risk, a policy exception is declared, the organisation has any earlier rejection (rejected-to-approved), or the case was pulled back by an early-review flag. The second approval must come from a different reviewer. Second review can only approve or reject.
+- **Independent second reviewer** is required when the case is high risk, a policy exception is declared, the organisation has any earlier rejection (rejected-to-approved), or the case was pulled back by an early-review flag. The second approval must come from a different reviewer. Second review can only approve or reject. **The requirement is sticky** (`second_review_required`): neither a reviewer nor the table owner can lower `risk_level` or clear it (trigger `protect_risk_controls`). Declaring high risk, a policy exception and an early-review flag each need a documented reason of at least 10 characters.
 - **Verified means:** an `approved` case whose `expires_at` is still in the future. Approval sets `expires_at = now() + 12 months`; `supplier_is_verified()` ignores lapsed approvals immediately, before any job runs. A flag sets expiry to now and restarts review.
 - One open case per organisation (partial unique index); duplicate or concurrent submissions are refused with 23505.
 - Evidence paths must sit in the organisation's own folder, contain no `..`, and exist in the bucket.
@@ -31,7 +31,8 @@ Gate impact: **none claimed.** G0/G1/G2 stay as recorded in `docs/waterfall-gate
 |---|---|---|
 | `create_organization_with_owner(legal_name, display_name, type, district, locality, description, creation_key)` | authenticated | 28000 no subject; 22023 bad input; 23514 constraint |
 | `submit_supplier_verification(org_id, evidence_paths[])` | org owner/admin | 42501 not a member; 22023 bad type/paths; 23505 open case exists |
-| `review_supplier_verification(case_id, decision, reason, scope, policy_exception, risk_level)` returns new status | verification_reviewer (aal2) | 42501 role/conflict/same second reviewer; 22023; 55000 case not open |
+| `review_supplier_verification(case_id, decision, reason, scope, policy_exception, risk_level, risk_reason)` returns new status | verification_reviewer (aal2) | 42501 role/conflict/same second reviewer/lowering risk; 22023 missing or short reason; 55000 case not open |
+| `my_platform_access()` returns jsonb `{user_id, aal, mfa_satisfied, roles, capabilities}` | authenticated | 28000 no subject |
 | `flag_supplier_for_early_review(case_id, reason)` | verification_reviewer (aal2) | 42501; 55000 not approved |
 | `reviewer_list_verification_cases(status)`, `reviewer_list_verification_decisions(case_id)` | verification_reviewer (aal2) | 42501 |
 | `authorize_evidence_access(case_id, path)` | verification_reviewer (aal2), audited | 42501 |
@@ -49,7 +50,7 @@ Gate impact: **none claimed.** G0/G1/G2 stay as recorded in `docs/waterfall-gate
 ## Engineering defaults awaiting owner / Security confirmation
 
 1. **MFA (aal2) required for every platform role.** Secure default, not an owner decision. Needs Supabase MFA enrolment in the admin client.
-2. **"High risk" classification:** the directive does not define it. Implemented as reviewer-declared (`risk_level`), plus automatic for policy exceptions, earlier rejections and early-review flags.
+2. **"High risk" classification:** the directive does not define it. Implemented as reviewer-declared (`risk_level` with a documented reason), plus a mandatory second review for policy exceptions, earlier rejections and early-review flags. Not accepted until Security Lead review.
 3. Evidence limits: 10 MiB per file, PDF/JPEG/PNG, max 20 files per case.
 4. Only `platform_admin` can read the audit trail (support and analyst roles get no audit access until their scope is approved).
 
@@ -63,14 +64,14 @@ Local throwaway PostgreSQL 16 plus pgTAP, with `scripts/local-db/supabase_stub.s
 
 | Check | Command | Result (18 Nov 2026) |
 |---|---|---|
-| pgTAP (6 files) | `./scripts/local-db/run-tests.sh` | **173 passed, 0 failed** (6 + 23 + 20 + 68 + 29 + 27) |
+| pgTAP (7 files) | `./scripts/local-db/run-tests.sh` | **235 passed, 0 failed** (6 + 23 + 20 + 62 + 68 + 29 + 27) |
 | Concurrency (real parallel sessions) | `./scripts/local-db/concurrency-test.sh` | **13 passed, 0 failed**, repeated runs stable |
-| Rollback | `./scripts/local-db/rollback-test.sh` | **7 passed**: schema and grants after rollback equal the two-migration baseline |
-| Mutation check | `python3 scripts/local-db/mutation-check.py` | **25 of 25** deliberate security regressions caught by the suite |
+| Rollback | `./scripts/local-db/rollback-test.sh` | **7 passed**: schema and grants after rolling back both E7 migrations equal the pre-E7 baseline |
+| Mutation check | `python3 scripts/local-db/mutation-check.py` | **41 of 41** deliberate security regressions caught by the suite (25 foundation + 16 B7) |
 
 Run with `export PGHOST=<socket dir> PGPORT=<port> PGUSER=postgres` against a local server that has pgTAP. The scripts refuse hosted hosts.
 
-Defects found by this testing and fixed before commit: (1) concurrency test exposed a write-skew in the last-owner guard (two owners removing each other left none): fixed with a row lock; (2) the rollback test exposed leftover column-level grants: fixed in the down script; (3) one stale assertion in PR #6's test (message text only).
+Defect found by the B7 review and fixed in the second migration: **a single reviewer could lower an early-review flag and approve alone** (reproduced on `cc84f70`; earlier tests and mutants missed it). Defects found by earlier testing and fixed before commit: (1) concurrency test exposed a write-skew in the last-owner guard (two owners removing each other left none): fixed with a row lock; (2) the rollback test exposed leftover column-level grants: fixed in the down script; (3) one stale assertion in PR #6's test (message text only).
 
 Security scenarios covered: unauthenticated denial, cross-tenant denial (rows, evidence folder, bucket), privilege escalation (forged metadata, missing MFA, self-grant, reviewer to admin), self-approval and conflict of interest, second-reviewer rules, private-document isolation including path traversal, audit and decision-history immutability, duplicate and concurrent submissions, membership integrity, and an allow-list guard that fails if any new public table, sequence or function becomes client-reachable.
 

@@ -35,10 +35,10 @@ check() { if [ "$2" = "$3" ]; then echo "PASS $1"; else echo "FAIL $1 (got '$2',
 dump() { pg_dump -s -x -O --no-comments -d "$1" -n public -n storage 2>/dev/null | grep -v -E '^(--|SET |SELECT pg_catalog\.set_config|\\(un)?restrict)' | grep -v '^$'; }
 dump_acl() { pg_dump -s -O --no-comments -d "$1" -n public 2>/dev/null | grep -E '^(GRANT|REVOKE|ALTER DEFAULT PRIVILEGES)' | sort; }
 
-# Baseline: every migration except the one being rolled back.
+# Baseline: every migration except the two E7 migrations being rolled back.
 mkdb "$BASE_DB"
 for f in "$ROOT"/supabase/migrations/*.sql; do
-  case "$f" in *20261117000100_secure_foundation.sql) continue ;; esac
+  case "$f" in *20261117000100_secure_foundation.sql|*20261118000100_verification_risk_policy.sql) continue ;; esac
   "${PSQL[@]}" -d "$BASE_DB" -f "$f" >/dev/null
 done
 
@@ -64,7 +64,7 @@ if ! diff -q "$TMP/base.sql" "$TMP/after.sql" >/dev/null; then diff "$TMP/base.s
 if ! diff -q "$TMP/base.acl" "$TMP/after.acl" >/dev/null; then diff "$TMP/base.acl" "$TMP/after.acl" | head -30; fi
 
 # The rolled-back database must accept the ORIGINAL (pre-E7) policy test from the baseline.
-check "no secure-foundation objects remain" "$(psql -X -q -A -t -d "$ROLL_DB" -c "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','private') and p.proname in ('create_organization_with_owner','has_platform_role','review_supplier_verification')")" "0"
+check "no secure-foundation objects remain" "$(psql -X -q -A -t -d "$ROLL_DB" -c "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','private') and p.proname in ('create_organization_with_owner','has_platform_role','review_supplier_verification','my_platform_access','protect_risk_controls')")" "0"
 
 echo
 if [ "$FAILS" -eq 0 ]; then echo "ROLLBACK TOTAL: all checks passed"; else echo "ROLLBACK TOTAL: $FAILS check(s) failed"; fi
