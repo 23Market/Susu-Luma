@@ -1,0 +1,56 @@
+name: flutter-diagnose
+
+# DIAGNOSTIC ONLY. Lives on scratch branches named diag/**; never merged.
+# Runs each Flutter check independently (so one failure does not hide the next) and publishes the
+# full output as check-run annotations, because job logs are not readable by the reviewing session.
+on:
+  push:
+    branches: ['diag/**']
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Versions
+        run: |
+          { flutter --version; dart --version; echo; echo "--- pubspec.yaml"; cat pubspec.yaml; echo "--- lockfile present?"; ls pubspec.lock 2>&1 || true; echo "--- SHA"; git rev-parse HEAD; } > versions.txt 2>&1 || true
+          msg=$(sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g' versions.txt)
+          echo "::notice title=versions::$msg"
+      - name: pub get
+        run: flutter pub get
+      - name: dart format (independent)
+        continue-on-error: true
+        run: |
+          set +e
+          dart format --output=none --set-exit-if-changed lib test > format.txt 2>&1
+          rc=$?; echo "exit=$rc" >> format.txt
+          msg=$(sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g' format.txt)
+          echo "::notice title=dart format (exit $rc)::$msg"
+          exit 0
+      - name: flutter analyze (independent)
+        continue-on-error: true
+        run: |
+          set +e
+          flutter analyze --no-pub > analyze.txt 2>&1
+          rc=$?; echo "exit=$rc" >> analyze.txt
+          msg=$(sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g' analyze.txt)
+          echo "::notice title=flutter analyze (exit $rc)::$msg"
+          exit 0
+      - name: flutter test (independent)
+        continue-on-error: true
+        run: |
+          set +e
+          flutter test --no-pub > test.txt 2>&1
+          rc=$?; echo "exit=$rc" >> test.txt
+          tail -c 20000 test.txt > test_tail.txt
+          msg=$(sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g' test_tail.txt)
+          echo "::notice title=flutter test tail (exit $rc)::$msg"
+          exit 0
