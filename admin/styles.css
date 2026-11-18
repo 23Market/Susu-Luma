@@ -44,7 +44,7 @@ html,body{margin:0}
   .app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
   .rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:calc(100vh - env(safe-area-inset-top,0px));background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;padding-left:max(12px,env(safe-area-inset-left,0px));gap:4px;z-index:40;overflow-y:auto}
   .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 14px}
-  .brand .mark{width:30px;height:30px;flex:none}
+  .brand .mark{width:30px;height:30px;flex:none;border-radius:8px}
   .brand b{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.02em}
   .brand span{display:block;font-size:10.5px;color:var(--fg-faint);letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-top:-2px}
   .nav{display:flex;flex-direction:column;gap:2px}

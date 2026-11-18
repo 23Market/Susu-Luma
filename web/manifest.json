@@ -1,6 +1,6 @@
 {
-    "name": "susu_luma",
-    "short_name": "susu_luma",
+    "name": "Susu Luma",
+    "short_name": "Susu Luma",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

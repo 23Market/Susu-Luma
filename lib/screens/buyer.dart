@@ -76,13 +76,8 @@ class _BuyerShellState extends State<BuyerShell> {
 PreferredSizeWidget _appBar(BuildContext context, String subtitle) => AppBar(
       titleSpacing: 20,
       title: Row(children: [
-        Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-                color: green, borderRadius: BorderRadius.circular(11)),
-            child: const Icon(Icons.storefront_rounded,
-                color: Colors.white, size: 21)),
+        Image.asset('assets/images/logo.png',
+            width: 38, height: 38, semanticLabel: 'Susu Luma logo'),
         const SizedBox(width: 10),
         Expanded(
             child:

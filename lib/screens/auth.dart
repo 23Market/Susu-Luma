@@ -17,13 +17,8 @@ class SignInScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Align(
               alignment: Alignment.centerLeft,
-              child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                      color: green, borderRadius: BorderRadius.circular(16)),
-                  child: const Icon(Icons.storefront_rounded,
-                      color: Colors.white, size: 28))),
+              child: Image.asset('assets/images/logo.png',
+                  width: 64, height: 64, semanticLabel: 'Susu Luma logo')),
           const SizedBox(height: 18),
           const Text('susu luma',
               style: TextStyle(
