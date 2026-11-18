@@ -33,16 +33,37 @@ MVP supports discovery, RFQs, quotes and order/fulfilment coordination only. No 
 - Location should be district/city/area as validated with pilot users; avoid unnecessary precise location.
 - Validate supplier evidence, categories/prohibited goods, tax/invoicing, data retention, complaints, delivery and legal obligations with local counsel/operations.
 
-## Current scaffold status
+## Prototype status
 
-The initial commit introduces a lightweight Flutter app shell and a draft database migration. Screens currently use sample data and do not connect to a backend. No Supabase project, credentials, payment provider or live integrations have been configured.
+Two clickable prototypes with illustrative sample data. Neither connects to a backend; no Supabase project, credentials, payment provider or live integration is configured.
+
+| Part | Where | What it demonstrates |
+| --- | --- | --- |
+| Mobile app (Flutter) | `lib/` | Buyer and supplier demo personas. Buyer: browse/search, product detail, RFQ form, compare quotes, accept quote, order + delivery tracking, report a problem, saved items, chat. Supplier: dashboard, listings (submitted for review), RFQ inbox, send/revise quotes, confirm orders, post delivery updates, chat. |
+| Ops/admin console (web) | `admin/` | Role-based demo sign-in (admin / reviewer / support): supplier verification decisions with scope + expiry + mandatory reasons, listing moderation with prohibited-term screening, RFQ/quote monitoring, order dispute handling, external payment-evidence recording, support cases, append-only audit log with CSV export, category/screening settings. |
+
+Domain rules enforced in the prototypes: every price has an explicit currency and every quantity an explicit unit; accepting a quote snapshots its terms into the order; payment stays `pending_unverified` unless an administrator records external evidence; privileged actions require a reason and are audited; no escrow/wallet/stored value.
+
+The two prototypes do not share data yet. Integration (shared Supabase backend, real auth/MFA, server-side RPCs for privileged transitions, signed evidence URLs, RLS tests) is the next gate.
 
 ## Local development
 
-1. Install the Flutter stable SDK and an Android toolchain.
-2. Run `flutter pub get`.
-3. Run `flutter analyze` and `flutter test`.
-4. Run `flutter run` on an Android emulator/device.
+### Mobile app
+
+1. Install the Flutter stable SDK (and an Android toolchain for devices/emulators).
+2. `flutter pub get`
+3. `flutter analyze` and `flutter test`
+4. `flutter run` (Android) or `flutter run -d chrome` (web preview).
+
+### Admin console
+
+No build step. Serve the folder with any static server and open it:
+
+```bash
+cd admin && python3 -m http.server 8080   # then visit http://localhost:8080
+```
+
+Pick a demo role on the sign-in screen (no password; this is not real authentication). State is kept in the browser's `localStorage`; use Settings → Reset sample data to restore the seed.
 
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
