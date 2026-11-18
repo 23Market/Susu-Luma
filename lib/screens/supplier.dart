@@ -25,8 +25,7 @@ class _SupplierShellState extends State<SupplierShell> {
       const MessagesTab()
     ];
     return Scaffold(
-      appBar: supplierAppBar(
-          context, 'Supplier · ${store.supplier(supplierSelf).name}'),
+      appBar: supplierAppBar(context, 'Supplier · ${store.myBusiness.name}'),
       body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
       bottomNavigationBar: NavigationBar(
           selectedIndex: _tab,
@@ -230,16 +229,18 @@ class _ListingFormState extends State<_ListingForm> {
                   SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (!_form.currentState!.validate()) return;
-                            widget.store.addListing(
-                                name: _name.text.trim(),
-                                category: _cat,
-                                unit: _unit.text.trim(),
-                                price: double.tryParse(_price.text),
-                                location: widget.store
-                                    .supplier(supplierSelf)
-                                    .district);
+                            final p = await guarded(
+                                context,
+                                () => widget.store.addListing(
+                                    name: _name.text.trim(),
+                                    category: _cat,
+                                    unit: _unit.text.trim(),
+                                    price: double.tryParse(_price.text),
+                                    location:
+                                        widget.store.myBusiness.district));
+                            if (p == null || !context.mounted) return;
                             Navigator.pop(context);
                             notice(context, 'Listing submitted for review.');
                           },

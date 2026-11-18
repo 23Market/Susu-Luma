@@ -78,11 +78,8 @@ class RfqDetailScreen extends StatelessWidget {
             child: Column(children: [
           LabelValue('Status', enumLabel(rfq.status)),
           LabelValue('Quantity', '${_qty(rfq.quantity)} ${rfq.unit}'),
-          LabelValue(
-              isBuyer ? 'Supplier' : 'Buyer',
-              isBuyer
-                  ? store.supplier(rfq.supplierId).name
-                  : buyerBusiness.name),
+          LabelValue(isBuyer ? 'Supplier' : 'Buyer',
+              isBuyer ? store.supplier(rfq.supplierId).name : rfq.buyerName),
           LabelValue('Deliver to', rfq.district),
           LabelValue('Target date', rfq.target ?? 'Flexible'),
           LabelValue('Notes', rfq.notes.isEmpty ? '—' : rfq.notes),
@@ -103,6 +100,11 @@ class RfqDetailScreen extends StatelessWidget {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                if (q.supplierName.isNotEmpty)
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(q.supplierName,
+                          style: const TextStyle(fontWeight: FontWeight.w700))),
                 Row(children: [
                   Expanded(
                       child: Text(
@@ -169,8 +171,8 @@ class RfqDetailScreen extends StatelessWidget {
                       child: const Text('Accept'))
                 ]));
     if (ok != true || !context.mounted) return;
-    final order = store.acceptQuote(rfq, q);
-    if (order == null) return;
+    final order = await guarded(context, () => store.acceptQuote(rfq, q));
+    if (order == null || !context.mounted) return;
     Navigator.pushReplacement(
         context,
         MaterialPageRoute<void>(
@@ -189,10 +191,9 @@ class RfqDetailScreen extends StatelessWidget {
                   onPressed: () => Navigator.pop(c, true),
                   child: const Text('Cancel RFQ'))
             ]));
-    if (ok == true && context.mounted) {
-      store.cancelRfq(rfq);
-      Navigator.pop(context);
-    }
+    if (ok != true || !context.mounted) return;
+    await guarded(context, () => store.cancelRfq(rfq));
+    if (context.mounted) Navigator.pop(context);
   }
 
   Future<void> _quoteSheet(BuildContext context, AppStore store) =>
@@ -282,13 +283,16 @@ class _QuoteFormState extends State<_QuoteForm> {
                   SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (!_form.currentState!.validate()) return;
-                            widget.store.submitQuote(widget.rfq,
-                                unitPrice: double.parse(_price.text),
-                                leadDays: int.parse(_lead.text),
-                                validDays: int.parse(_valid.text),
-                                terms: _terms.text.trim());
+                            final q = await guarded(
+                                context,
+                                () => widget.store.submitQuote(widget.rfq,
+                                    unitPrice: double.parse(_price.text),
+                                    leadDays: int.parse(_lead.text),
+                                    validDays: int.parse(_valid.text),
+                                    terms: _terms.text.trim()));
+                            if (q == null || !context.mounted) return;
                             Navigator.pop(context);
                             notice(context, 'Quote sent to buyer.');
                           },
@@ -354,14 +358,14 @@ class OrderDetailScreen extends StatelessWidget {
             child: Column(children: [
           LabelValue('Status', enumLabel(o.status)),
           LabelValue(isBuyer ? 'Supplier' : 'Buyer',
-              isBuyer ? store.supplier(o.supplierId).name : buyerBusiness.name),
+              isBuyer ? store.supplier(o.supplierId).name : o.buyerName),
           LabelValue('Quantity', '${_qty(o.quantity)} ${o.unit}'),
           LabelValue(
               'Unit price', '${money(o.unitPrice, o.currency)} per ${o.unit}'),
           LabelValue('Total', money(o.total, o.currency)),
           LabelValue('Lead time', '${o.leadDays} days'),
           LabelValue('From RFQ', o.rfqRef),
-          const LabelValue('Payment', 'Pending unverified'),
+          LabelValue('Payment', snakeLabel(o.paymentStatus)),
         ])),
         const Disclaimer(paymentNotice),
         const SizedBox(height: 8),
@@ -393,9 +397,9 @@ class OrderDetailScreen extends StatelessWidget {
         const SizedBox(height: 8),
         if (!isBuyer && o.status == OrderStatus.awaitingSellerConfirmation)
           FilledButton(
-              onPressed: () {
-                store.confirmOrder(o);
-                notice(context, 'Order confirmed.');
+              onPressed: () async {
+                await guarded(context, () => store.confirmOrder(o));
+                if (context.mounted) notice(context, 'Order confirmed.');
               },
               child: const Text('Confirm order')),
         if (!isBuyer && active) ...[
@@ -405,9 +409,8 @@ class OrderDetailScreen extends StatelessWidget {
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final s in AppStore.deliverySteps)
               OutlinedButton(
-                  onPressed: () {
-                    store.addDeliveryEvent(o, s, '');
-                  },
+                  onPressed: () =>
+                      guarded(context, () => store.addDeliveryEvent(o, s, '')),
                   child: Text(snakeLabel(s)))
           ]),
         ],
@@ -444,7 +447,9 @@ class OrderDetailScreen extends StatelessWidget {
                       child: const Text('Submit'))
                 ]));
     c.dispose();
-    if (text != null && text.isNotEmpty) store.reportProblem(order, text);
+    if (text != null && text.isNotEmpty && context.mounted) {
+      await guarded(context, () => store.reportProblem(order, text));
+    }
   }
 }
 
@@ -477,7 +482,7 @@ class MessagesTab extends StatelessWidget {
                   Text(
                       store.role == Role.buyer
                           ? store.supplier(t.supplierId).name
-                          : buyerBusiness.name,
+                          : t.buyerName,
                       style: const TextStyle(fontWeight: FontWeight.w800)),
                   Text(t.title,
                       style: const TextStyle(fontSize: 12, color: green)),
@@ -556,9 +561,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _send(AppStore store) {
-    store.send(widget.thread, _c.text);
+  Future<void> _send(AppStore store) async {
+    final text = _c.text;
     _c.clear();
+    await guarded(context, () => store.send(widget.thread, text));
   }
 }
 
@@ -569,8 +575,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final isBuyer = store.role == Role.buyer;
-    final name =
-        isBuyer ? buyerBusiness.name : store.supplier(supplierSelf).name;
+    final name = store.myBusiness.name;
     return Scaffold(
       appBar: AppBar(title: const Text('Business')),
       body: ListView(padding: const EdgeInsets.all(20), children: [

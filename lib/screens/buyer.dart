@@ -1,7 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
 import '../models.dart';
-import '../store.dart';
 import '../ui.dart';
 import 'common.dart';
 
@@ -9,8 +8,12 @@ const categories = [
   'All',
   'Construction',
   'Agriculture',
-  'Metals',
-  'Equipment'
+  'Metals & Hardware',
+  'Equipment & Machinery',
+  'Food & Beverage',
+  'Energy & Power',
+  'Packaging & Office',
+  'Logistics & Services'
 ];
 
 class BuyerShell extends StatefulWidget {
@@ -43,7 +46,7 @@ class _BuyerShellState extends State<BuyerShell> {
       const MessagesTab(),
     ];
     return Scaffold(
-      appBar: _appBar(context, 'Buyer · ${buyerBusiness.name}'),
+      appBar: _appBar(context, 'Buyer · ${store.myBusiness.name}'),
       body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
       bottomNavigationBar: NavigationBar(
           selectedIndex: _tab,
@@ -488,15 +491,18 @@ class _RfqFormScreenState extends State<RfqFormScreen> {
     if (d != null) setState(() => _target = d);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     final store = StoreScope.of(context);
-    final rfq = store.createRfq(
-        product: widget.product,
-        quantity: double.parse(_qty.text),
-        district: _district,
-        notes: _notes.text.trim(),
-        target: _target == null ? null : shortDate(_target!));
+    final rfq = await guarded(
+        context,
+        () => store.createRfq(
+            product: widget.product,
+            quantity: double.parse(_qty.text),
+            district: _district,
+            notes: _notes.text.trim(),
+            target: _target));
+    if (rfq == null || !mounted) return;
     Navigator.popUntil(context, (r) => r.isFirst);
     Navigator.push(context,
         MaterialPageRoute<void>(builder: (_) => RfqDetailScreen(rfq: rfq)));

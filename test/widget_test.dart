@@ -19,54 +19,56 @@ Future<AppStore> _boot(WidgetTester tester, Role role) async {
 
 void main() {
   group('store rules', () {
-    test('money always carries explicit currency', () {
+    test('money always carries explicit currency', () async {
       expect(money(1234567, 'SLE'), 'SLE 1,234,567');
       expect(money(12.5, 'SLE'), 'SLE 12.50');
     });
 
     test(
         'quote acceptance snapshots terms into an order with unverified payment',
-        () {
+        () async {
       final s = AppStore();
       final rfq = s.rfqs.firstWhere((r) => r.status == RfqStatus.quoted);
-      final order = s.acceptQuote(rfq, rfq.quotes.first)!;
+      final order = (await s.acceptQuote(rfq, rfq.quotes.first))!;
       expect(rfq.status, RfqStatus.accepted);
       expect(order.total, 400 * 280);
       expect(order.paymentStatus, 'pending_unverified');
-      expect(s.acceptQuote(rfq, rfq.quotes.first), isNull,
+      expect(await s.acceptQuote(rfq, rfq.quotes.first), isNull,
           reason: 'cannot accept twice');
     });
 
-    test('delivery updates need a confirmed order', () {
+    test('delivery updates need a confirmed order', () async {
       final s = AppStore();
       final rfq = s.rfqs.firstWhere((r) => r.status == RfqStatus.quoted);
-      final o = s.acceptQuote(rfq, rfq.quotes.first)!;
-      s.addDeliveryEvent(o, 'dispatched', '');
+      final o = (await s.acceptQuote(rfq, rfq.quotes.first))!;
+      await s.addDeliveryEvent(o, 'dispatched', '');
       expect(o.events, isEmpty);
-      s.confirmOrder(o);
-      s.addDeliveryEvent(o, 'dispatched', '');
+      await s.confirmOrder(o);
+      await s.addDeliveryEvent(o, 'dispatched', '');
       expect(o.status, OrderStatus.inFulfilment);
-      s.addDeliveryEvent(o, 'delivered', '');
+      await s.addDeliveryEvent(o, 'delivered', '');
       expect(o.status, OrderStatus.delivered);
     });
 
-    test('new listings are unpublished until reviewed', () {
+    test('new listings are unpublished until reviewed', () async {
       final s = AppStore();
-      final p = s.addListing(
+      final p = await s.addListing(
           name: 'Test item', category: 'Metals', unit: 'kg', location: 'Bo');
       expect(s.search('test item', 'All'), isEmpty);
       expect(p.published, isFalse);
     });
 
-    test('a revised quote supersedes the previous one', () {
+    test('a revised quote supersedes the previous one', () async {
       final s = AppStore();
       final rfq = s.rfqs.firstWhere((r) => r.status == RfqStatus.submitted);
-      s.submitQuote(rfq, unitPrice: 100, leadDays: 2, validDays: 5, terms: '');
-      s.submitQuote(rfq, unitPrice: 90, leadDays: 2, validDays: 5, terms: '');
+      await s.submitQuote(rfq,
+          unitPrice: 100, leadDays: 2, validDays: 5, terms: '');
+      await s.submitQuote(rfq,
+          unitPrice: 90, leadDays: 2, validDays: 5, terms: '');
       expect(
           rfq.quotes.where((q) => q.status == QuoteStatus.submitted).length, 1);
       expect(
-          s.submitQuote(rfq,
+          await s.submitQuote(rfq,
               unitPrice: 0, leadDays: 1, validDays: 1, terms: ''),
           isNull);
     });

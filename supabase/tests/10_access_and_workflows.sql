@@ -236,5 +236,16 @@ begin
   perform t.login(s1);
   perform t.ok((select count(*) from public.messages) = 1, 'the supplier reads the conversation');
   perform t.logout();
+  ------------------------------------------------------------------ counterparty visibility
+  perform t.login(s1);
+  perform t.ok((select count(*) from public.organizations where id = orgA) = 1, 'a supplier can read the buyer organisation it deals with');
+  perform t.ok((select count(*) from public.organizations where id = orgT) = 0, 'a supplier cannot read a competing supplier');
+  perform t.logout();
+  perform t.login(s2);
+  perform t.ok((select count(*) from public.organizations where id = orgS) = 0, 'competing suppliers on one RFQ cannot see each other');
+  perform t.logout();
+  perform t.login(b2);
+  perform t.ok((select count(*) from public.organizations where id in (orgA, orgS, orgT)) = 0, 'an unrelated buyer reads none of them');
+  perform t.logout();
   raise notice 'ALL ASSERTIONS PASSED';
 end $$;

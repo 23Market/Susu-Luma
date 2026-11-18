@@ -8,16 +8,40 @@ const supplierSelf = 's1';
 
 /// In-memory prototype state. Replace with Supabase-backed repositories at the integration gate;
 /// privileged transitions (quote acceptance, order creation) must move to server-side RPCs.
+enum AuthPhase { signedOut, needsOrganization, ready }
+
 class AppStore extends ChangeNotifier {
   AppStore({DateTime Function()? clock}) : _clock = clock ?? DateTime.now {
+    suppliers = List.of(_demoSuppliers);
     _seed();
   }
+
+  /// Empty store for subclasses that load real data.
+  AppStore.empty({DateTime Function()? clock})
+      : _clock = clock ?? DateTime.now {
+    suppliers = <Business>[];
+  }
+
   final DateTime Function() _clock;
+  DateTime now() => _clock();
   int _seq = 100;
   String _id(String p) => '$p${_seq++}';
 
+  /// True when backed by a real backend (see LiveAppStore).
+  bool get isLive => false;
+
+  /// Where the UI should be: sign-in, business setup, or the role shell.
+  AuthPhase get phase => role == null ? AuthPhase.signedOut : AuthPhase.ready;
+
+  /// The signed-in business (buyer or supplier, by role).
+  Business get myBusiness =>
+      role == Role.supplier ? supplier(supplierSelf) : buyerBusiness;
+
+  /// Organisation id used to scope supplier-side lists.
+  String get mySupplierId => supplierSelf;
+
   Role? role;
-  final suppliers = const <Business>[
+  static const _demoSuppliers = <Business>[
     Business(
         id: 's1',
         name: 'Freetown Building Supply',
@@ -34,6 +58,7 @@ class AppStore extends ChangeNotifier {
         district: 'Western Area Urban'),
     Business(id: 's4', name: 'Bo Agro Cooperative', district: 'Bo'),
   ];
+  late List<Business> suppliers;
   final products = <Product>[];
   final rfqs = <Rfq>[];
   final orders = <Order>[];
@@ -41,7 +66,8 @@ class AppStore extends ChangeNotifier {
   final saved = <String>{};
   String verificationStatus = 'approved'; // supplier persona (illustrative)
 
-  Business supplier(String id) => suppliers.firstWhere((s) => s.id == id);
+  Business supplier(String id) => suppliers.firstWhere((s) => s.id == id,
+      orElse: () => Business(id: id, name: 'Supplier', district: ''));
   Product? productById(String id) =>
       products.where((p) => p.id == id).firstOrNull;
 
@@ -59,15 +85,15 @@ class AppStore extends ChangeNotifier {
   // ---- views by persona ----
   List<Product> get published => products.where((p) => p.published).toList();
   List<Product> get myListings =>
-      products.where((p) => p.supplierId == supplierSelf).toList();
+      products.where((p) => p.supplierId == mySupplierId).toList();
   List<Rfq> get myRfqs => role == Role.supplier
-      ? rfqs.where((r) => r.supplierId == supplierSelf).toList()
+      ? rfqs.where((r) => r.supplierId == mySupplierId).toList()
       : rfqs;
   List<Order> get myOrders => role == Role.supplier
-      ? orders.where((o) => o.supplierId == supplierSelf).toList()
+      ? orders.where((o) => o.supplierId == mySupplierId).toList()
       : orders;
   List<Thread> get myThreads => role == Role.supplier
-      ? threads.where((t) => t.supplierId == supplierSelf).toList()
+      ? threads.where((t) => t.supplierId == mySupplierId).toList()
       : threads;
 
   List<Product> search(String query, String category) {
@@ -86,12 +112,12 @@ class AppStore extends ChangeNotifier {
   }
 
   // ---- buyer actions ----
-  Rfq createRfq(
+  Future<Rfq> createRfq(
       {required Product product,
       required double quantity,
       required String district,
       required String notes,
-      String? target}) {
+      DateTime? target}) async {
     final n = rfqs.length + 1;
     final rfq = Rfq(
         id: _id('r'),
@@ -103,7 +129,7 @@ class AppStore extends ChangeNotifier {
         unit: product.unit,
         district: district,
         notes: notes,
-        target: target);
+        target: target == null ? null : shortDate(target));
     rfqs.insert(0, rfq);
     final thread = threads.firstWhere(
         (t) => t.supplierId == product.supplierId && t.title == product.name,
@@ -124,14 +150,14 @@ class AppStore extends ChangeNotifier {
   String _q(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
-  void cancelRfq(Rfq rfq) {
+  Future<void> cancelRfq(Rfq rfq) async {
     if (rfq.status == RfqStatus.accepted) return;
     rfq.status = RfqStatus.cancelled;
     notifyListeners();
   }
 
   /// Accepts a quote: snapshots price terms into an order so later quote edits cannot change it.
-  Order? acceptQuote(Rfq rfq, Quote quote) {
+  Future<Order?> acceptQuote(Rfq rfq, Quote quote) async {
     if (rfq.status != RfqStatus.quoted ||
         quote.status != QuoteStatus.submitted) {
       return null;
@@ -156,7 +182,7 @@ class AppStore extends ChangeNotifier {
     return order;
   }
 
-  void reportProblem(Order o, String text) {
+  Future<void> reportProblem(Order o, String text) async {
     if (o.status == OrderStatus.cancelled || o.status == OrderStatus.disputed) {
       return;
     }
@@ -167,11 +193,11 @@ class AppStore extends ChangeNotifier {
   }
 
   // ---- supplier actions ----
-  Quote? submitQuote(Rfq rfq,
+  Future<Quote?> submitQuote(Rfq rfq,
       {required double unitPrice,
       required int leadDays,
       required int validDays,
-      required String terms}) {
+      required String terms}) async {
     if (unitPrice <= 0 ||
         rfq.status == RfqStatus.accepted ||
         rfq.status == RfqStatus.cancelled) {
@@ -200,7 +226,7 @@ class AppStore extends ChangeNotifier {
     return quote;
   }
 
-  void confirmOrder(Order o) {
+  Future<void> confirmOrder(Order o) async {
     if (o.status != OrderStatus.awaitingSellerConfirmation) return;
     o.status = OrderStatus.confirmed;
     o.events.add(
@@ -215,7 +241,7 @@ class AppStore extends ChangeNotifier {
     'delivered'
   ];
 
-  void addDeliveryEvent(Order o, String type, String note) {
+  Future<void> addDeliveryEvent(Order o, String type, String note) async {
     if (o.status == OrderStatus.awaitingSellerConfirmation ||
         o.status == OrderStatus.delivered ||
         o.status == OrderStatus.cancelled ||
@@ -228,20 +254,20 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Product addListing(
+  Future<Product> addListing(
       {required String name,
       required String category,
       required String unit,
       double? price,
-      required String location}) {
+      required String location}) async {
     final p = Product(
         id: _id('p'),
         name: name,
         category: category,
-        supplierId: supplierSelf,
+        supplierId: mySupplierId,
         location: location,
         unit: unit,
-        icon: _categoryIcon(category),
+        icon: categoryIcon(category),
         color: const Color(0xFFE6EDE6),
         indicativePrice: price,
         published: false);
@@ -251,17 +277,21 @@ class AppStore extends ChangeNotifier {
   }
 
   // ---- messaging ----
-  void send(Thread t, String text) {
+  Future<void> send(Thread t, String text) async {
     final clean = text.trim();
     if (clean.isEmpty || role == null) return;
     t.messages.add(ChatMessage(role!, clean, _clock()));
     notifyListeners();
   }
 
-  static IconData _categoryIcon(String c) => switch (c) {
+  static IconData categoryIcon(String c) => switch (c) {
         'Agriculture' => Icons.grass_rounded,
-        'Metals' => Icons.construction_rounded,
-        'Equipment' => Icons.precision_manufacturing_rounded,
+        'Metals & Hardware' => Icons.construction_rounded,
+        'Equipment & Machinery' => Icons.precision_manufacturing_rounded,
+        'Food & Beverage' => Icons.restaurant_rounded,
+        'Energy & Power' => Icons.bolt_rounded,
+        'Packaging & Office' => Icons.inventory_2_rounded,
+        'Logistics & Services' => Icons.local_shipping_rounded,
         _ => Icons.foundation_rounded,
       };
 
@@ -289,7 +319,7 @@ class AppStore extends ChangeNotifier {
       Product(
           id: 'p3',
           name: 'Iron Rods 12 mm',
-          category: 'Metals',
+          category: 'Metals & Hardware',
           supplierId: 's3',
           location: 'Freetown',
           unit: 'length',
@@ -318,7 +348,7 @@ class AppStore extends ChangeNotifier {
       Product(
           id: 'p6',
           name: 'Generator 20 kVA (hire)',
-          category: 'Equipment',
+          category: 'Equipment & Machinery',
           supplierId: 's3',
           location: 'Freetown',
           unit: 'day',

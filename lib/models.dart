@@ -70,8 +70,9 @@ class Quote {
       required this.validDays,
       required this.terms,
       this.currency = 'SLE',
-      this.status = QuoteStatus.submitted});
-  final String id, terms, currency;
+      this.status = QuoteStatus.submitted,
+      this.supplierName = ''});
+  final String id, terms, currency, supplierName;
   final double unitPrice;
   final int leadDays, validDays;
   QuoteStatus status;
@@ -89,9 +90,21 @@ class Rfq {
       required this.notes,
       this.target,
       this.status = RfqStatus.submitted,
+      this.buyerName = 'Aberdeen Construction',
+      this.itemIds = const [],
       List<Quote>? quotes})
       : quotes = quotes ?? [];
-  final String id, ref, productName, supplierId, unit, district, notes;
+  final String id,
+      ref,
+      productName,
+      supplierId,
+      unit,
+      district,
+      notes,
+      buyerName;
+
+  /// Server item ids (live mode). More than one means a multi-item RFQ.
+  final List<String> itemIds;
   final double quantity;
   final String? target;
   RfqStatus status;
@@ -117,17 +130,28 @@ class Order {
       required this.currency,
       required this.leadDays,
       this.status = OrderStatus.awaitingSellerConfirmation,
+      this.paymentStatus = 'pending_unverified',
+      this.buyerName = 'Aberdeen Construction',
+      this.snapshotTotal,
       List<DeliveryEvent>? events})
       : events = events ?? [];
-  final String id, ref, rfqRef, productName, supplierId, unit, currency;
+  final String id,
+      ref,
+      rfqRef,
+      productName,
+      supplierId,
+      unit,
+      currency,
+      buyerName;
+  final double? snapshotTotal;
   final double quantity, unitPrice;
   final int leadDays;
   OrderStatus status;
 
   /// Payment is arranged outside the app; only an administrator can record external evidence.
-  final String paymentStatus = 'pending_unverified';
+  String paymentStatus;
   final List<DeliveryEvent> events;
-  double get total => quantity * unitPrice;
+  double get total => snapshotTotal ?? quantity * unitPrice;
 }
 
 class ChatMessage {
@@ -142,9 +166,10 @@ class Thread {
       {required this.id,
       required this.title,
       required this.supplierId,
+      this.buyerName = 'Aberdeen Construction',
       List<ChatMessage>? messages})
       : messages = messages ?? [];
-  final String id, title, supplierId;
+  final String id, title, supplierId, buyerName;
   final List<ChatMessage> messages;
 }
 
@@ -153,3 +178,18 @@ String snakeLabel(String s) {
   final t = s.replaceAll('_', ' ');
   return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
 }
+
+String shortDate(DateTime d) => '${d.day.toString().padLeft(2, '0')} ${const [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ][d.month - 1]} ${d.year}';

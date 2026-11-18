@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
+import 'backend/errors.dart';
 import 'models.dart';
 import 'store.dart';
 
@@ -14,6 +15,15 @@ class StoreScope extends InheritedNotifier<AppStore> {
       : super(notifier: store);
   static AppStore of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<StoreScope>()!.notifier!;
+}
+
+Future<T?> guarded<T>(BuildContext context, Future<T> Function() op) async {
+  try {
+    return await op();
+  } catch (e) {
+    if (context.mounted) notice(context, friendlyError(e));
+    return null;
+  }
 }
 
 void notice(BuildContext context, String message) =>
@@ -169,18 +179,3 @@ class LabelValue extends StatelessWidget {
         ]),
       );
 }
-
-String shortDate(DateTime d) => '${d.day.toString().padLeft(2, '0')} ${const [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ][d.month - 1]} ${d.year}';
