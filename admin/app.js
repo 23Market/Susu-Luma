@@ -6,20 +6,21 @@ const ri=(lo,hi)=>lo+Math.floor(rnd()*(hi-lo+1));
 const DAY=864e5, NOW=Date.parse("2026-10-21T07:00:00Z");
 const BOOT=Date.now(), demoNow=()=>NOW+(Date.now()-BOOT);
 
-const CATS=[["veh","Vehicles"],["prop","Property"],["elec","Electronics"],["phones","Phones & Tablets"],["home","Home & Furniture"],["fashion","Fashion"],["services","Services"],["jobs","Jobs"]];
+const CATS=[["construction","Construction"],["agriculture","Agriculture"],["metals","Metals & Hardware"],["equipment","Equipment & Machinery"],["food","Food & Beverage"],["energy","Energy & Power"],["packaging","Packaging & Office"],["logistics","Logistics & Services"]];
 const CATNAME=Object.fromEntries(CATS);
 const first=["Mohamed","Fatmata","Ibrahim","Aminata","Alusine","Isatu","Abu","Mariama","Santigie","Kadiatu","Alhaji","Haja","Sorie","Zainab","Foday","Yeabu","Osman","Memunatu","Sahr","Jebbeh"];
 const last=["Kamara","Sesay","Bangura","Conteh","Koroma","Turay","Mansaray","Jalloh","Kargbo","Fofanah","Sankoh","Bah","Kanu","Dumbuya","Saidu","Momoh","Williams","Coker","Deen","Yansaneh"];
 const areas=["Freetown — Aberdeen","Freetown — Lumley","Freetown — Hill Station","Freetown — Wellington","Waterloo","Bo","Kenema","Makeni","Koidu","Port Loko"];
+// "Title|unit" — every listing carries an explicit unit of sale.
 const titlesBy={
- veh:["Toyota Corolla 2014, low mileage","Honda CR-V 2016 clean title","Mercedes C200 2012","Bajaj keke (tricycle) 2022","Toyota Hiace minibus","Nissan Almera 2015","Mahindra pickup 2019"],
- prop:["2-bedroom flat, Lumley","Self-contained room, Wilberforce","Land 50x100 at Waterloo","4-bedroom house, Hill Station","Shop space, Sani Abacha St","Compound for rent, Goderich"],
- elec:["HP EliteBook i5 8GB","Samsung 43\" smart TV","Hisense fridge 260L","Generator 3.5KVA Tiger","Solar inverter 2KW kit","Canon EOS 2000D","PlayStation 4 slim 500GB"],
- phones:["iPhone 13 128GB","Samsung A54 dual SIM","Tecno Camon 20","Infinix Note 30","iPad 9th gen 64GB","Redmi Note 12","iPhone 11 64GB"],
- home:["6-seater dining set","Queen bed + mattress","Office desk and chair","Gas cooker 4-burner","3-piece sofa set","Wardrobe, 3-door"],
- fashion:["Ankara gown, custom","Men's leather shoes UK9","Human hair wig 18\"","Nike Air Force 1 UK8","Designer handbag","Kids clothes bundle"],
- services:["Plumbing & tiling","Event catering, Freetown","Laptop & phone repair","Generator servicing","Interior painting","Web design for SMEs"],
- jobs:["Shop sales assistant","Experienced driver wanted","Hotel receptionist","Security guard (night)","Accountant, part-time","Tailor needed"]
+ construction:["Portland cement 50 kg|bag","Iron roofing sheets 3 m|sheet","Sharp sand (tipper load)|load","Hollow blocks 6\"|block","Granite chippings 3/4\"|load","Ceramic floor tiles 60x60|carton","PVC pipe 4\" 6 m|length"],
+ agriculture:["Fresh cocoa beans|kg","Cassava flour 25 kg|sack","Paddy rice, local variety|bag","Palm oil, 25 L|drum","Groundnuts, shelled|kg","Ginger, dried|kg"],
+ metals:["Iron rods 12 mm|length","Galvanised nails 4\"|kg","Steel angle bar 40x40|length","Padlocks, heavy duty|dozen","Welding rods 3.2 mm|box","Barbed wire 50 m|roll"],
+ equipment:["Concrete mixer 350 L|unit","Water pump 3 in|unit","Generator 20 kVA (hire)|day","Angle grinder 230 mm|unit","Wheelbarrow, steel|unit","Mini excavator (hire)|day"],
+ food:["Bottled water 500 ml|carton","Cooking oil 5 L|carton","Sugar 50 kg|bag","Tomato paste 400 g|carton","Frozen chicken, 10 kg|carton","Instant coffee 200 g|carton"],
+ energy:["Solar panel 400 W|unit","Inverter 3 kVA|unit","Deep-cycle battery 200 Ah|unit","LED floodlight 100 W|unit","Diesel, bulk|litre","Cable 2.5 mm\u00b2, 100 m|roll"],
+ packaging:["Corrugated cartons, 5-ply|bundle","Plastic bags, 50 micron|bale","A4 paper 80 gsm|ream","Pallet wrap 500 mm|roll","Thermal receipt rolls|carton","Jute sacks 50 kg|bale"],
+ logistics:["Container haulage Freetown\u2013Bo|trip","Warehouse space, per pallet|pallet","Freight forwarding, 20 ft|container","Cold-chain delivery|trip","Courier, upcountry|parcel","Customs clearance support|job"]
 };
 const STAT=["active","active","active","pending","pending","paused","rejected","sold","expired","removed","archived"];
 const reasonCodes=["Prohibited item","Duplicate listing","Misleading price","Wrong category","Suspected scam","Counterfeit goods","Incomplete details","Other"];
@@ -27,7 +28,7 @@ function mkName(){return pick(first)+" "+pick(last)}
 function mask(s,kind){ if(kind==="email"){const[a,b]=s.split("@");return a[0]+"•••@"+b;} return s.replace(/(\+232 \d\d )\d\d\d(.*)/,"$1•••$2"); }
 function initials(n){return n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()}
 
-let USERS=[], LISTINGS=[], REPORTS=[], CONVOS={}, CAMPAIGNS=[];
+let tu;let USERS=[], LISTINGS=[], REPORTS=[], CONVOS={}, CAMPAIGNS=[];
 (function seed(){
   for(let i=0;i<46;i++){
     const nm=mkName(); const type=rnd()<.52?"seller":(rnd()<.2?"business":"buyer");
@@ -48,9 +49,9 @@ let USERS=[], LISTINGS=[], REPORTS=[], CONVOS={}, CAMPAIGNS=[];
       const fl=[]; if(rnd()<.14)fl.push("duplicate"); if(rnd()<.14)fl.push("misleading price"); if(rnd()<.1)fl.push("suspicious");
       if(fl.includes("suspicious")&&rnd()<.6)status="pending";
       const promoted= rnd()<.16?pick(["boost","featured","top"]):null;
-      const base={veh:[9000,220000],prop:[1200,950000],elec:[350,14000],phones:[600,9500],home:[250,6500],fashion:[80,2200],services:[150,4000],jobs:[0,0]}[cid];
-      const price= cid==="jobs"?0:ri(base[0],base[1]);
-      LISTINGS.push({id:"LST-"+(10000+n++),title:pick(arr),cat:cid,sellerId:sel.id,sellerName:sel.name,
+      const base={construction:[120,4500],agriculture:[8,900],metals:[90,6500],equipment:[900,60000],food:[20,1800],energy:[250,22000],packaging:[15,900],logistics:[300,15000]}[cid];
+      const price=ri(base[0],base[1]);
+      LISTINGS.push({id:"LST-"+(10000+n++),title:(tu=pick(arr).split("|"))[0],unit:tu[1],cat:cid,sellerId:sel.id,sellerName:sel.name,
         price,status,promoted,flags:fl,reports:fl.length?ri(1,5):(rnd()<.15?1:0),
         created:NOW-ri(0,90)*DAY, views:ri(3,1400)});
     }
@@ -88,7 +89,7 @@ let USERS=[], LISTINGS=[], REPORTS=[], CONVOS={}, CAMPAIGNS=[];
 const PERMS={
   superadmin:{label:"Super Admin",all:true,scope:null},
   operations:{label:"Operations Lead",scope:null,perms:["overview.view","listings.view","listings.moderate","listings.remove","listings.restore","listings.recategorize","listings.bulk","listings.feature","categories.view","categories.edit","categories.publish","rfqs.view","rfqs.routing.view","rfqs.investigate","rfqs.notes.manage","rfqs.export","quotes.view","quotes.compare","quotes.history.view","quotes.export","orders.view","orders.history.view","fulfilment.view","fulfilment.evidence.view","orders.investigate","orders.export","payments.view","organisations.view","organisations.members.view","verification.view","verification.evidence.view","verification.assign","verification.decide","support.cases.view","support.cases.assign","support.cases.claim","support.cases.notes.manage","support.cases.respond","support.cases.escalate","support.cases.resolve","reports.view","reports.resolve","reviews.view","reviews.moderate","analytics.view","analytics.export","catalogue.import","catalogue.import.validate","catalogue.import.commit","catalogue.import.history.view","system.health.view","messaging.send","users.view","search.listings","search.rfqs","search.orders","search.users","search.organisations","search.cases","audit.view","audit.export"]},
-  trust:{label:"Trust & Safety",scope:["veh","prop","elec","phones"],perms:["overview.view","listings.view","listings.moderate","listings.remove","listings.restore","listings.recategorize","listings.bulk","reports.view","reports.resolve","rfqs.view","rfqs.investigate","quotes.view","quotes.investigate","orders.view","orders.investigate","support.cases.view","support.cases.assign","support.cases.claim","support.cases.notes.manage","support.cases.respond","support.cases.escalate","support.cases.resolve","support.evidence.view","reviews.view","reviews.moderate","reviews.restore","reviews.appeals.view","users.view","users.restrict","users.suspend","users.reinstate","verification.view","privacy.requests.view","privacy.requests.review","analytics.view","messaging.send","search.users","search.listings","search.cases","audit.view","audit.export"]},
+  trust:{label:"Trust & Safety",scope:["construction","metals","equipment","energy"],perms:["overview.view","listings.view","listings.moderate","listings.remove","listings.restore","listings.recategorize","listings.bulk","reports.view","reports.resolve","rfqs.view","rfqs.investigate","quotes.view","quotes.investigate","orders.view","orders.investigate","support.cases.view","support.cases.assign","support.cases.claim","support.cases.notes.manage","support.cases.respond","support.cases.escalate","support.cases.resolve","support.evidence.view","reviews.view","reviews.moderate","reviews.restore","reviews.appeals.view","users.view","users.restrict","users.suspend","users.reinstate","verification.view","privacy.requests.view","privacy.requests.review","analytics.view","messaging.send","search.users","search.listings","search.cases","audit.view","audit.export"]},
   support:{label:"Support",scope:null,perms:["overview.view","users.view","users.pii.search","users.pii.reveal","users.cases","users.restrict","users.reinstate","users.verify","organisations.view","organisations.members.view","reports.view","listings.view","rfqs.view","quotes.view","orders.view","payments.view","support.cases.view","support.cases.assign","support.cases.claim","support.cases.notes.manage","support.cases.respond","support.cases.escalate","support.cases.resolve","support.evidence.view","analytics.view","messaging.send","search.users","search.cases","search.orders"]},
   finance:{label:"Finance",scope:null,perms:["overview.view","revenue.view","payments.view","payments.evidence.view","payments.reconcile","payments.export","orders.view","orders.history.view","quotes.view","listings.view","listings.feature","organisations.view","analytics.view","analytics.financial.view","analytics.export","messaging.broadcast","search.orders","audit.view","audit.export"]},
   analyst:{label:"Analyst",scope:null,perms:["overview.view","analytics.view","analytics.export","listings.view","users.view","organisations.view","rfqs.view","quotes.view","orders.view","reviews.view","search.listings","search.orders"]}
@@ -111,7 +112,7 @@ function audit(action,summary,sev,reason){AUDSEQ++;AUDIT.unshift({id:"AUD-"+AUDS
 
 /* helpers */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const money=n=> n===0?"—":"Le "+n.toLocaleString("en-US");
+const money=n=> n===0?"—":"SLE "+n.toLocaleString("en-US");
 function ago(t){const m=Math.round((demoNow()-t)/6e4);if(m<1)return"just now";if(m<60)return m+"m ago";const h=Math.round(m/60);if(h<24)return h+"h ago";const dd=Math.round(h/24);return dd+"d ago";}
 function dateStr(t){return new Date(t).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -215,7 +216,7 @@ function drawListings(){
     <td class="selcol"><input type="checkbox" data-sel="${l.id}" ${LSEL.has(l.id)?"checked":""} aria-label="Select ${l.id}"></td>
     <td><span class="ttl">${esc(l.title)}</span><span class="meta">${l.id} · ${ago(l.created)}${l.promoted?` · <span style="color:var(--accent)">★ ${l.promoted}</span>`:""}</span></td>
     <td class="selname">${esc(l.sellerName)}<span>${l.sellerId}</span></td>
-    <td>${CATNAME[l.cat]}</td><td class="price">${money(l.price)}</td><td>${flagHtml(l)}</td>
+    <td>${CATNAME[l.cat]}</td><td class="price">${money(l.price)}${l.price?` <span class="meta">/ ${esc(l.unit||"unit")}</span>`:""}</td><td>${flagHtml(l)}</td>
     <td><span class="pill st-${l.status}">${l.status}</span></td>
     <td><div class="rowacts">${listingActionsInline(l)}</div></td></tr>`).join("");
   const all=$("#lAll");if(all)all.checked=rows.every(r=>LSEL.has(r.id))&&rows.length>0;
@@ -293,13 +294,13 @@ function drawReports(){
 /* ---------- MESSAGING ---------- */
 let MSUB="inbox", MSEL=null;
 const TEMPLATES=[
-  {id:"t_approved",name:"Listing approved",kind:"auto",ch:["in-app","push"],body:'Good news {{seller}} — your listing "{{listing}}" is now live on Luma.'},
+  {id:"t_approved",name:"Listing approved",kind:"auto",ch:["in-app","push"],body:'Good news {{seller}} — your listing "{{listing}}" is now live on Susu Luma.'},
   {id:"t_rejected",name:"Listing rejected",kind:"auto",ch:["in-app","push","sms"],body:'Hi {{seller}}, your listing "{{listing}}" was not approved. Reason: {{reason}}. You can edit and resubmit.'},
   {id:"t_expiring",name:"Listing expiring in 48h",kind:"auto",ch:["in-app","push"],body:'{{seller}}, your listing "{{listing}}" expires in 48 hours. Renew it to keep it visible.'},
   {id:"t_verify",name:"Verification outcome",kind:"auto",ch:["in-app","sms"],body:'{{seller}}, your seller verification was {{decision}}. {{note}}'},
-  {id:"t_suspend",name:"Suspension notice",kind:"auto",ch:["in-app","sms","email"],body:'{{seller}}, your Luma account has been suspended. Reason: {{reason}}. You may appeal in the app.'},
+  {id:"t_suspend",name:"Suspension notice",kind:"auto",ch:["in-app","sms","email"],body:'{{seller}}, your Susu Luma account has been suspended. Reason: {{reason}}. You may appeal in the app.'},
   {id:"t_verifypush",name:"Verify to keep selling",kind:"marketing",ch:["in-app","push","sms"],body:'{{seller}}, verify your account to keep your listings live and build buyer trust. It takes 2 minutes.'},
-  {id:"t_reengage",name:"Re-engage inactive seller",kind:"marketing",ch:["sms","in-app"],body:'We miss you on Luma, {{seller}}! Post a listing today — buyers are searching in {{area}}.'},
+  {id:"t_reengage",name:"Re-engage inactive seller",kind:"marketing",ch:["sms","in-app"],body:'We miss you on Susu Luma, {{seller}}! Post a listing today — buyers are searching in {{area}}.'},
   {id:"t_promo",name:"Promotion announcement",kind:"marketing",ch:["in-app","push"],body:'{{seller}}, featured listings are 30% off this weekend. Boost your items to the top of the category.'}
 ];
 function renderMessaging(){
@@ -372,7 +373,7 @@ function drawBroadcast(el){
         <div class="fld"><label>Category (has active listing)</label><select id="bcCat"><option value="all">Any category</option>${cats}</select></div>
         <div class="fld"><label>Activity</label><select id="bcAct"><option value="any"${BC.activity==="any"?" selected":""}>Any activity</option><option value="new"${BC.activity==="new"?" selected":""}>Joined &lt; 7 days</option><option value="inactive"${BC.activity==="inactive"?" selected":""}>Inactive 60 days</option><option value="power"${BC.activity==="power"?" selected":""}>Power sellers (5+ listings)</option></select></div>
       </div>
-      <div class="fld"><label>Channels</label><div class="chans" id="bcChans">${["in-app","push","sms","whatsapp","email"].map(ch=>`<button type="button" class="chan" data-ch="${ch}" aria-pressed="${BC.channels.has(ch)}">${ch} <small>${CH_COST[ch]?"Le"+CH_COST[ch]:"free"}</small></button>`).join("")}</div></div>
+      <div class="fld"><label>Channels</label><div class="chans" id="bcChans">${["in-app","push","sms","whatsapp","email"].map(ch=>`<button type="button" class="chan" data-ch="${ch}" aria-pressed="${BC.channels.has(ch)}">${ch} <small>${CH_COST[ch]?"SLE "+CH_COST[ch]:"free"}</small></button>`).join("")}</div></div>
       <div class="fld"><label>Message template</label><select id="bcTmpl"><option value="">Free text (marketing)</option>${tmplOpts}</select></div>
       <div class="fld"><label>Message</label><textarea id="bcBody" placeholder="Write your message… use {{seller}} and {{area}} for personalisation">${esc(BC.body)}</textarea></div>
       <div class="fld"><label>Send</label><select id="bcSched"><option value="now"${BC.schedule==="now"?" selected":""}>Send now</option><option value="scheduled"${BC.schedule==="scheduled"?" selected":""}>Schedule for tomorrow 09:00</option></select></div>
@@ -403,8 +404,8 @@ function drawReadout(){
   const needsApproval=elig>100&&!(PERMS[role].all);
   el.innerHTML=`<div class="big">${elig.toLocaleString()}<small> recipients</small></div>
     <div style="font-size:12px;color:var(--fg-muted);margin:4px 0 12px">${marketing?`marketing — opted-in only (of ${aud.length} matched)`:"transactional — all matched"}</div>
-    ${["in-app","push","sms","whatsapp","email"].filter(c=>BC.channels.has(c)).map(c=>`<div class="rb"><span style="text-transform:capitalize">${c}</span><span class="n">${reach[c].toLocaleString()}${CH_COST[c]?` · Le${(reach[c]*CH_COST[c]).toLocaleString()}`:""}</span></div>`).join("")||`<div class="rb"><span>No channel selected</span></div>`}
-    <div class="cost"><span>Estimated cost</span><b>${cost?"Le "+cost.toLocaleString():"Free"}</b></div>
+    ${["in-app","push","sms","whatsapp","email"].filter(c=>BC.channels.has(c)).map(c=>`<div class="rb"><span style="text-transform:capitalize">${c}</span><span class="n">${reach[c].toLocaleString()}${CH_COST[c]?` · SLE ${(reach[c]*CH_COST[c]).toLocaleString()}`:""}</span></div>`).join("")||`<div class="rb"><span>No channel selected</span></div>`}
+    <div class="cost"><span>Estimated cost</span><b>${cost?"SLE "+cost.toLocaleString():"Free"}</b></div>
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
       ${needsApproval?`<div style="font-size:11.5px;color:var(--warn);background:var(--warn-weak);border-radius:8px;padding:8px 10px">Over 100 recipients — needs a second admin with broadcast-approval to release.</div>`:""}
       <button class="btn pri" id="bcSend" ${canBroadcast&&BC.channels.size&&elig>0?"":"disabled "+(!canBroadcast?"data-lock":"")}>${BC.schedule==="scheduled"?"Schedule broadcast":needsApproval?"Submit for approval":"Send broadcast"}</button>
@@ -422,7 +423,7 @@ function sendBroadcast(elig,reach,cost,needsApproval){
     delivered:status==="delivered"?Math.round(elig*0.94):0,read:status==="delivered"?Math.round(elig*0.58):0,replied:status==="delivered"?Math.round(elig*0.04):0};
   CAMPAIGNS.unshift(camp);
   audit("broadcast.send",`${scheduled?"Scheduled":needsApproval?"Submitted for approval":"Broadcast"} "${name}" to ${elig} recipients`,"critical","");
-  toast(scheduled?"Broadcast scheduled for 09:00":needsApproval?"Submitted for approval":`Broadcast sent to ${elig} recipients`+(cost?` · Le ${cost.toLocaleString()}`:""),"ok");
+  toast(scheduled?"Broadcast scheduled for 09:00":needsApproval?"Submitted for approval":`Broadcast sent to ${elig} recipients`+(cost?` · SLE ${cost.toLocaleString()}`:""),"ok");
   BC.name="";BC.body="";drawBroadcast($("#mBody"));refreshCounts();
 }
 function audienceLabel(){
@@ -435,7 +436,7 @@ function audienceLabel(){
 function drawCampaigns(){
   const el=$("#campList");if(!el)return;
   el.innerHTML=CAMPAIGNS.map(c=>`<div class="camp-card"><div class="ch"><b>${esc(c.name)}</b><span class="pill st-${c.status}">${c.status}</span></div>
-    <div class="meta" style="margin-bottom:10px">${c.id} · ${esc(c.audience)} · ${c.channels.join(", ")} · by ${esc(c.by)} · ${ago(c.at)}${c.cost?` · Le ${c.cost.toLocaleString()}`:""}</div>
+    <div class="meta" style="margin-bottom:10px">${c.id} · ${esc(c.audience)} · ${c.channels.join(", ")} · by ${esc(c.by)} · ${ago(c.at)}${c.cost?` · SLE ${c.cost.toLocaleString()}`:""}</div>
     <div class="delv"><div class="d"><b class="tnum">${c.recipients.toLocaleString()}</b><span>Recipients</span></div><div class="d"><b class="tnum">${(c.delivered||0).toLocaleString()}</b><span>Delivered</span></div><div class="d"><b class="tnum">${(c.read||0).toLocaleString()}</b><span>Read</span></div><div class="d"><b class="tnum">${(c.replied||0).toLocaleString()}</b><span>Replied</span></div></div>
     ${c.status==="open"?`<div style="margin-top:10px"><button class="btn sm ${PERMS[role].all?"pri":""}" data-approve="${c.id}" ${PERMS[role].all?"":"disabled data-lock"}>Approve &amp; release</button></div>`:""}</div>`).join("");
 }
@@ -457,7 +458,7 @@ function openListing(id){
   const l=LISTINGS.find(x=>x.id===id);if(!l)return;const scoped=inScope(l.cat);
   const quality=[];if(l.flags.includes("duplicate"))quality.push(["warn","Possible duplicate","Same title and seller as 2 other live listings"]);if(l.flags.includes("misleading price"))quality.push(["warn","Misleading price","Price is 70% below category median"]);if(l.flags.includes("suspicious"))quality.push(["crit","Suspicious content","Contact details in description; off-platform payment"]);if(l.reports>0)quality.push(["crit",`${l.reports} user report${l.reports>1?"s":""}`,"Most recent: “item never delivered”"]);
   $("#drawer").innerHTML=`<div class="drawer-h"><div><div class="hid">${l.id} · ${CATNAME[l.cat]}</div><h2>${esc(l.title)}</h2></div><button class="closex" data-close aria-label="Close">✕</button></div>
-   <div class="drawer-b"><div><div class="sec-t">Details</div><dl class="dl"><dt>Price</dt><dd class="price">${money(l.price)}</dd><dt>Status</dt><dd><span class="pill st-${l.status}">${l.status}</span></dd><dt>Seller</dt><dd>${esc(l.sellerName)}</dd><dt>Views</dt><dd class="tnum">${l.views.toLocaleString()}</dd><dt>Listed</dt><dd>${dateStr(l.created)}</dd><dt>Promotion</dt><dd>${l.promoted?`<span class="pill promo">★ ${l.promoted}</span>`:"—"}</dd></dl></div>
+   <div class="drawer-b"><div><div class="sec-t">Details</div><dl class="dl"><dt>Price</dt><dd class="price">${money(l.price)}${l.unit?` per ${esc(l.unit)}`:""}</dd><dt>Status</dt><dd><span class="pill st-${l.status}">${l.status}</span></dd><dt>Seller</dt><dd>${esc(l.sellerName)}</dd><dt>Views</dt><dd class="tnum">${l.views.toLocaleString()}</dd><dt>Listed</dt><dd>${dateStr(l.created)}</dd><dt>Promotion</dt><dd>${l.promoted?`<span class="pill promo">★ ${l.promoted}</span>`:"—"}</dd></dl></div>
      ${quality.length?`<div><div class="sec-t">Quality signals</div><div class="qlist" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${quality.map(([s,t,dsc])=>`<div class="qrow"><div class="qi tone-${s}"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></div><div class="qt"><b>${t}</b><span>${dsc}</span></div></div>`).join("")}</div></div>`:`<div><div class="sec-t">Quality signals</div><p class="meta">No quality flags on this listing.</p></div>`}
      ${!scoped?`<div style="font-size:12.5px;color:var(--warn);background:var(--warn-weak);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent);border-radius:8px;padding:9px 11px">This listing is in <b>${CATNAME[l.cat]}</b>, outside your assigned categories. You can view it but not act on it.</div>`:""}
    </div><div class="drawer-f">${listingDrawerActions(l,scoped)}</div>`;
@@ -500,7 +501,7 @@ function refuse(perm,on){toast(`Refused: your role can't do that (${perm})`,"bad
 function openActionModal(o){
   const needReason=NEEDS_REASON[o.act],destructive=DESTRUCTIVE[o.act];
   const catOpts=CATS.filter(([id])=>id!==o.target.cat).map(([id,nm])=>`<option value="${id}">${nm}</option>`).join("");
-  const packOpts=`<option value="boost">Boost — Le 150</option><option value="featured">Featured — Le 450</option><option value="top">Top of category — Le 900</option>`;
+  const packOpts=`<option value="boost">Boost — SLE 150</option><option value="featured">Featured — SLE 450</option><option value="top">Top of category — SLE 900</option>`;
   const field=o.act==="verify"?`<label>Decision</label><select id="mDecision"><option value="approve">Approve verification</option><option value="reject">Reject verification</option></select>`
     :o.act==="recategorize"?`<label>Move to category</label><select id="mCat">${catOpts}</select>`
     :o.act==="feature"?`<label>Promotion pack</label><select id="mPack">${packOpts}</select><label>Billing reference</label><select id="mReason"><option>BIL-${ri(20000,29999)}</option></select>`
@@ -522,7 +523,7 @@ function applyAction(o){
     else if(o.act==="feature"){const pack=$("#mPack").value;t.promoted=pack;audit("listing.promote",`Promoted "${t.title}" (${pack})`,"info","");toast("Promotion applied","ok");}
     else{t.status=map[o.act];const sev=o.act==="remove"?"critical":(o.act==="reject"?"warn":"info");audit("listing."+o.act,`${o.act[0].toUpperCase()+o.act.slice(1)}ed "${t.title}"`,sev,reason);
       // auto-notice
-      if(o.act==="approve")notifySeller(t.sellerId,t.sellerName,`Good news — your listing "${t.title}" is now live on Luma.`,["in-app","push"]),toast("Listing live · seller notified","ok");
+      if(o.act==="approve")notifySeller(t.sellerId,t.sellerName,`Good news — your listing "${t.title}" is now live on Susu Luma.`,["in-app","push"]),toast("Listing live · seller notified","ok");
       else if(o.act==="reject")notifySeller(t.sellerId,t.sellerName,`Your listing "${t.title}" was not approved. Reason: ${reason}. You can edit and resubmit.`,["in-app","push","sms"]),toast("Listing rejected · seller notified","ok");
       else if(o.act==="remove")notifySeller(t.sellerId,t.sellerName,`Your listing "${t.title}" has been removed. Reason: ${reason}.`,["in-app","sms"]),toast("Listing removed · seller notified","ok");
       else toast("Listing "+t.status,"ok");}
@@ -548,7 +549,7 @@ function openBulkModal(act){
   const reasonSel=act!=="approve"?`<label>Reason</label><select id="mReason">${reasonCodes.map(r=>`<option>${r}</option>`).join("")}</select>`:"";
   $("#modalBox").innerHTML=`<h3>Bulk ${act} — ${eligible.length} listing${eligible.length>1?"s":""}</h3><p>${ids.length-eligible.length?`${ids.length-eligible.length} skipped (out of scope). `:""}One audit entry will record all of them. Sellers are notified.</p>${reasonSel}<div class="acts"><button class="btn" data-cancel>Cancel</button><button class="btn ${act==="remove"?"danger":"pri"}" id="mConfirm">${act[0].toUpperCase()+act.slice(1)} ${eligible.length}</button></div>`;
   $("#modal").classList.add("on");$("#modal").setAttribute("aria-hidden","false");$("#modalBox").querySelector("[data-cancel]").onclick=closeModal;
-  $("#mConfirm").onclick=()=>{const reason=$("#mReason")?$("#mReason").value:"";const map={approve:"active",reject:"rejected",remove:"removed"};eligible.forEach(l=>{l.status=map[act];if(act==="approve")notifySeller(l.sellerId,l.sellerName,`Your listing "${l.title}" is now live on Luma.`,["in-app","push"]);else notifySeller(l.sellerId,l.sellerName,`Your listing "${l.title}" was ${act==="remove"?"removed":"rejected"}. Reason: ${reason}.`,["in-app","sms"]);});audit("listing.bulk",`Bulk ${act} of ${eligible.length} listings`,act==="remove"?"critical":"warn",reason);eligible.forEach(l=>LSEL.delete(l.id));closeModal();drawListings();refreshCounts();toast(`${eligible.length} listings ${map[act]} · sellers notified`,"ok");};
+  $("#mConfirm").onclick=()=>{const reason=$("#mReason")?$("#mReason").value:"";const map={approve:"active",reject:"rejected",remove:"removed"};eligible.forEach(l=>{l.status=map[act];if(act==="approve")notifySeller(l.sellerId,l.sellerName,`Your listing "${l.title}" is now live on Susu Luma.`,["in-app","push"]);else notifySeller(l.sellerId,l.sellerName,`Your listing "${l.title}" was ${act==="remove"?"removed":"rejected"}. Reason: ${reason}.`,["in-app","sms"]);});audit("listing.bulk",`Bulk ${act} of ${eligible.length} listings`,act==="remove"?"critical":"warn",reason);eligible.forEach(l=>LSEL.delete(l.id));closeModal();drawListings();refreshCounts();toast(`${eligible.length} listings ${map[act]} · sellers notified`,"ok");};
 }
 
 /* ---------- reports resolve ---------- */

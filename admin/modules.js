@@ -10,7 +10,8 @@ const cur=(n,c)=>(c||"SLE")+" "+Math.round(n).toLocaleString("en-US");
 const dt=t=>t?new Date(t).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}):"—";
 const dd=t=>t?new Date(t).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}):"—";
 const age=t=>{const h=Math.round((T()-t)/HR);return h<48?h+"h":Math.round(h/24)+"d"};
-const UNIT={veh:"vehicle",prop:"property",elec:"unit",phones:"unit",home:"set",fashion:"piece",services:"job",jobs:"hire"};
+const UNIT={construction:"bag",agriculture:"kg",metals:"length",equipment:"unit",food:"carton",energy:"unit",packaging:"bundle",logistics:"trip"};
+const BULK=["construction","agriculture","food","packaging"],BIG=["equipment","energy","logistics"];
 const hx=(n,w)=>Math.abs(n).toString(16).toUpperCase().padStart(w,"0").slice(-w);
 const nm=()=>P(first)+" "+P(last);
 const uname=id=>{const u=USERS.find(x=>x.id===id);return u?u.name:id};
@@ -45,12 +46,12 @@ for(let i=0;i<32;i++){
   const inv=[...new Set([...items.map(x=>x.sellerId),...Array.from({length:I(0,2)},()=>P(sellers).id)])];
   const status=plan<.10?"cancelled":plan<.22?"expired":plan<.40?(days<2?"new":"awaiting"):plan<.62?"quoted":"accepted";
   const rfq={id:"RFQ-"+(6100+i),ref:"SL-"+hx(0x4F2A91C0B7+i*7919191,10),buyer:buyer.id,created,status,
-    items:items.map(l=>({listingId:l.id,title:l.title,cat:l.cat,qty:["veh","prop"].includes(l.cat)?I(1,3):I(2,60),unit:UNIT[l.cat]})),
+    items:items.map(l=>({listingId:l.id,title:l.title,cat:l.cat,qty:BIG.includes(l.cat)?I(1,6):BULK.includes(l.cat)?I(20,800):I(10,300),unit:l.unit||UNIT[l.cat]})),
     dest:P(DISTRICTS)[0],target:created+I(7,30)*864e5,invites:inv.map(sid=>({sid,routedAt:created+I(1,90)*6e4,state:R()<.3?"declined":"no_response"})),notes:[],flagged:false,operator:""};
   RFQS.push(rfq);
   if(status==="quoted"||status==="accepted"){
     const resp=inv.slice().sort(()=>R()-.5).slice(0,Math.min(inv.length,I(1,3)));
-    const cc=["veh","prop"].includes(L.cat)&&R()<.35?"USD":"SLE";
+    const cc=["equipment","energy"].includes(L.cat)&&R()<.5?"USD":"SLE";
     const mine=resp.map(sid=>{
       const nv=R()<.3?I(2,3):1,lines=rfq.items.map(it=>{let b=LISTINGS.find(x=>x.id===it.listingId).price||I(500,3000);if(cc==="USD")b=Math.max(5,Math.round(b/22));return{item:it.title,qty:it.qty,unit:it.unit,unitPrice:Math.max(1,Math.round(b*(.85+R()*.3)))}});
       const total=lines.reduce((s,l)=>s+l.qty*l.unitPrice,0),t0=created+I(3,40)*HR;
@@ -104,7 +105,7 @@ sellers.filter(u=>u.verification!=="none").forEach(u=>{
   const stt=u.verification==="verified"?(u.status==="suspended"?"suspended":"approved"):u.verification==="rejected"?"rejected":P(["submitted","in_review","in_review","info_required"]);
   const done=stt==="approved"||stt==="suspended"?5:stt==="rejected"?I(1,3):stt==="info_required"?I(2,4):stt==="in_review"?I(2,5):I(0,2);
   const sub=T()-I(2,90)*864e5,top=LISTINGS.filter(l=>l.sellerId===u.id).map(l=>l.cat)[0];
-  const v={id:"VER-"+(vn++),user:u.id,status:stt,type:u.type==="business"?"Registered business":P(["Individual trader","Cooperative"]),submitted:sub,risk:["veh","prop","phones","elec"].includes(top)?"Elevated":"Standard",
+  const v={id:"VER-"+(vn++),user:u.id,status:stt,type:u.type==="business"?"Registered business":P(["Individual trader","Cooperative"]),submitted:sub,risk:["equipment","energy","food"].includes(top)?"Elevated":"Standard",
     checklist:CHECK.map((c,i)=>({c,done:i<done})),reviewer:stt==="submitted"?"":P(["Sorie Mansaray","Isatu Bangura","Haja Jalloh"]),evidence:CHECK.slice(0,Math.max(1,done||1)).map((c,i)=>["registration-cert","tax-clearance","id-scan","premises-photo","momo-statement"][i]+"-"+hx(I(1e3,9e3),4)+".pdf"),
     decided:["approved","rejected","suspended"].includes(stt)?sub+I(2,8)*864e5:null,expires:stt==="approved"||stt==="suspended"?T()+(I(0,10)<2?I(3,28):I(40,330))*864e5:null,
     history:[{at:sub,text:"Dossier submitted by seller"}],notes:""};
@@ -114,11 +115,12 @@ sellers.filter(u=>u.verification!=="none").forEach(u=>{
   VERIFS.push(v);
 });
 
+if(!VERIFS.some(v=>v.status==="in_review"&&v.checklist.some(c=>!c.done))&&VERIFS.length){const v=VERIFS.find(x=>!["approved","suspended"].includes(x.status))||VERIFS[0];v.status="in_review";v.reviewer=v.reviewer||"Sorie Mansaray";v.checklist.forEach((c,i)=>c.done=i<2);v.decided=null;v.expires=null;const u=USERS.find(x=>x.id===v.user);if(u)u.verification="pending"}
 /* ===== taxonomy ===== */
 const TAX={version:7,at:T()-12*864e5,cats:[]};
-const ATTR={veh:["Make","Model","Year","Mileage","Condition"],prop:["Bedrooms","Plot size","Title type","Furnished"],elec:["Brand","Condition","Warranty"],phones:["Brand","Storage","Condition","Dual SIM"],home:["Material","Condition"],fashion:["Size","Brand","Condition"],services:["Coverage area","Availability"],jobs:["Contract type","Salary range"]};
-CATS.forEach(([id,name])=>TAX.cats.push({id,name,parent:"",attrs:ATTR[id].slice(),unit:UNIT[id],pre:["veh","prop","phones"].includes(id),status:"published",draft:null}));
-[["veh","Cars"],["veh","Trucks & buses"],["prop","Land"],["prop","Rentals"],["phones","Smartphones"],["elec","Laptops"]].forEach(([p,n],i)=>{const par=TAX.cats.find(c=>c.id===p);TAX.cats.push({id:p+"-"+i,name:n,parent:par.name,attrs:par.attrs.slice(0,3),unit:par.unit,pre:par.pre,status:"published",draft:null})});
+const ATTR={construction:["Grade / standard","Pack size","Origin"],agriculture:["Variety","Moisture %","Harvest date","Origin district"],metals:["Grade","Dimensions","Coating"],equipment:["Brand","Power rating","Condition","Warranty"],food:["Shelf life","Storage","Certification","Pack size"],energy:["Rated power","Voltage","Warranty","Certification"],packaging:["Material","Dimensions","Minimum order"],logistics:["Coverage area","Vehicle type","Transit time"]};
+CATS.forEach(([id,name])=>TAX.cats.push({id,name,parent:"",attrs:ATTR[id].slice(),unit:UNIT[id],pre:["equipment","energy","food"].includes(id),status:"published",draft:null}));
+[["construction","Cement & aggregates"],["construction","Roofing"],["agriculture","Grains & flour"],["agriculture","Cocoa & coffee"],["metals","Rebar & rods"],["equipment","Generators & pumps"]].forEach(([p,n],i)=>{const par=TAX.cats.find(c=>c.id===p);TAX.cats.push({id:p+"-"+i,name:n,parent:par.name,attrs:par.attrs.slice(0,3),unit:par.unit,pre:par.pre,status:"published",draft:null})});
 
 /* ===== cases, reviews, privacy, imports, ads ===== */
 const OPS=["Sorie Mansaray","Isatu Bangura","Abu Koroma","Haja Jalloh","Zainab Kargbo","J. Momoh"];
@@ -394,7 +396,7 @@ reg("reviews",()=>({ph:"Search review, buyer, supplier, order…",rows:()=>REVIE
 const PACK={boost:150,featured:450,top:900};
 reg("ads",()=>{const rows=()=>LISTINGS.filter(l=>l.promoted).map(l=>{const m=PROMO[l.id]||(PROMO[l.id]={start:T()-I(1,25)*864e5,source:P(["Admin applied","Seller self-serve"]),ref:"BIL-"+I(20000,29999)});return{rid:l.id,l,title:l.title,seller:l.sellerName,pack:l.promoted,source:m.source,ref:m.ref,start:m.start,end:m.start+30*864e5,status:"active"}}).concat(PROMO_ENDED);
  return{ph:"Search listing, supplier, billing ref…",rows,rid:r=>r.rid,status:r=>r.status,search:r=>r.title+" "+r.seller+" "+r.ref+" "+r.pack,sort:(a,b)=>b.start-a.start,filters:[["all","All"],["active","Active"],["ended","Ended"]],
- kpis:()=>{const a=rows().filter(r=>r.status==="active");return[KPI("Active promotions",a.length,""),KPI("Boost",nl(a,r=>r.pack==="boost"),"Le 150"),KPI("Featured",nl(a,r=>r.pack==="featured"),"Le 450"),KPI("Top of category",nl(a,r=>r.pack==="top"),"Le 900"),KPI("Revenue (30d)",can("revenue.view")?"Le "+a.reduce((s,r)=>s+PACK[r.pack],0).toLocaleString("en-US"):"Restricted",can("revenue.view")?"billing references only":"needs revenue.view")]},
+ kpis:()=>{const a=rows().filter(r=>r.status==="active");return[KPI("Active promotions",a.length,""),KPI("Boost",nl(a,r=>r.pack==="boost"),"SLE 150"),KPI("Featured",nl(a,r=>r.pack==="featured"),"SLE 450"),KPI("Top of category",nl(a,r=>r.pack==="top"),"SLE 900"),KPI("Revenue (30d)",can("revenue.view")?"SLE "+a.reduce((s,r)=>s+PACK[r.pack],0).toLocaleString("en-US"):"Restricted",can("revenue.view")?"billing references only":"needs revenue.view")]},
  cols:[["Listing",r=>sub(esc(r.title),r.rid)],["Supplier",r=>esc(r.seller)],["Pack",r=>`<span class="pill promo">★ ${r.pack}</span>`],["Source",r=>esc(r.source)],["Billing reference",r=>`<span class="mono">${esc(r.ref)}</span>`],["Started",r=>dd(r.start)],["Ends",r=>dd(r.end)],["Status",r=>pill(r.status)]],
  detail:r=>({kicker:r.rid+" · "+r.pack,title:esc(r.title),body:sec("Promotion",dl([["Pack",`<span class="pill promo">★ ${r.pack}</span>`],["Supplier",esc(r.seller)],["Source",esc(r.source)],["Billing reference",`<span class="mono">${esc(r.ref)}</span>`],["Period",dd(r.start)+" → "+dd(r.end)],["Status",pill(r.status)]]))+`<p><a href="#" class="xl" data-open="${r.rid}">Open listing</a></p>`,
   actions:r.status==="active"?[{label:"End promotion…",cls:"danger",perm:"listings.feature",fn:()=>form({title:"End promotion",intro:"The listing returns to normal ranking immediately.",fields:[REASON],ok:"End promotion",danger:true,onSubmit:f=>{r.l.promoted=null;PROMO_ENDED.unshift({rid:r.rid,title:r.title,seller:r.seller,pack:r.pack,source:r.source,ref:r.ref,start:r.start,end:T(),status:"ended"});delete PROMO[r.rid];audit("promotion.end",`Ended ${r.pack} promotion on “${r.title}”`,"warn",f.reason);done("Promotion ended")}})}]:[]})}});
@@ -411,7 +413,7 @@ reg("analytics",()=>{const pct=(a,b)=>b?Math.round(a/b*100):0;
   {id:"M6",kpi:"Catalogue quality",v:pct(nl(act,l=>!l.flags.length&&!l.reports),act.length)+"%",def:"Active listings with no quality flag or open report",f:"clean_active ÷ active",src:"listing.flagged, report.created",q:"Heuristic flags (demo)"},
   {id:"M7",kpi:"Trust & safety",v:(REPORTS.filter(r=>r.status==="open").length/Math.max(1,act.length)*100).toFixed(1)+" /100",def:"Open reports per 100 active listings",f:"open_reports ÷ active × 100",src:"report.created, report.resolved",q:"Demo data"},
   {id:"M8",kpi:"Complaints",v:(nl(CASES,c=>c.status!=="resolved")/Math.max(1,ORDERS.length)*100).toFixed(0)+" /100 orders",def:"Open support cases per 100 orders",f:"open_cases ÷ orders × 100",src:"case.opened, case.resolved",q:"Demo data"},
-  {id:"F1",fin:true,kpi:"Promotion billing (30d)",v:"Le "+LISTINGS.filter(l=>l.promoted).reduce((s,l)=>s+PACK[l.promoted],0).toLocaleString("en-US"),def:"Sum of promotion pack prices applied in the window — billing references only, NOT recognised revenue",f:"Σ pack_price",src:"promotion.applied",q:"Unaudited"},
+  {id:"F1",fin:true,kpi:"Promotion billing (30d)",v:"SLE "+LISTINGS.filter(l=>l.promoted).reduce((s,l)=>s+PACK[l.promoted],0).toLocaleString("en-US"),def:"Sum of promotion pack prices applied in the window — billing references only, NOT recognised revenue",f:"Σ pack_price",src:"promotion.applied",q:"Unaudited"},
   {id:"F2",fin:true,kpi:"GMV",v:"Not claimed",def:"Gross merchandise value is not reported until commercial and payment definitions are approved",f:"—",src:"—",q:"Definition pending"}];
  return{ph:"Search metric or definition…",rows:()=>M().filter(m=>!m.fin||can("analytics.financial.view")),rid:m=>m.id,status:m=>m.fin?"financial":"operational",search:m=>m.kpi+" "+m.def,filters:[["all","All"],["operational","Operational"],["financial","Financial"]],
  kpis:()=>M().filter(m=>!m.fin).map(m=>KPI(m.kpi,m.v,m.q)),
@@ -442,7 +444,7 @@ reg("privacy",()=>{const open=p=>p.status!=="completed",odue=p=>open(p)&&p.due<T
    ...(p.status==="decided"?[{label:"Mark complete…",cls:"good",perm:"privacy.requests.complete",fn:()=>form({title:"Complete "+p.id,intro:"Attach evidence that the outcome was carried out. Deletions require a retention/legal-hold check.",fields:[{id:"ev",label:"Completion evidence reference",req:true,ph:"e.g. completion-record-1209.pdf"},{id:"hold",label:"Retention / legal-hold check done",type:"select",options:[["no","No"],["yes","Yes"]]},REASON],ok:"Complete",onSubmit:f=>{if(p.type==="deletion"&&f.hold!=="yes"){toast("Refused: confirm the retention / legal-hold check first","bad");return false}p.status="completed";p.completed=T();p.evidence=f.ev;p.log.push({at:T(),text:"Completed by "+me()});audit("privacy.complete",`Completed ${p.id}`,"critical",f.reason);done("Request completed")}})}]:[])]})}});
 
 /* bulk catalogue import */
-const IMP={cat:"elec",text:"",file:"",rows:[],errs:[],ok:false,key:""};
+const IMP={cat:"equipment",text:"",file:"",rows:[],errs:[],ok:false,key:""};
 function parseCSV(t){const out=[];let row=[],c="",q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===","){row.push(c);c=""}else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;row.push(c);c="";if(row.some(x=>x.trim()))out.push(row);row=[]}else c+=ch}row.push(c);if(row.some(x=>x.trim()))out.push(row);return out}
 function validateImport(){
   const g=parseCSV(IMP.text.trim()),errs=[];IMP.rows=[];IMP.ok=false;IMP.key="imp-"+hx(IMP.cat.split("").reduce((h,c)=>(h*31+c.charCodeAt(0))|0,7)+IMP.text.trim().split("").reduce((h,c)=>(h*31+c.charCodeAt(0))|0,7),8);
@@ -453,7 +455,7 @@ function validateImport(){
   if(g.length-1>500){IMP.errs=[{row:0,msg:"Too many rows (max 500 per import)."}];return}
   g.slice(1).forEach((r,i)=>{const n=i+2,title=(r[ix("title")]||"").trim(),price=(r[ix("price")]||"").trim(),unit=(r[ix("unit")]||"").trim(),sid=(r[ix("seller_id")]||"").trim(),curc=ix("currency")>=0?(r[ix("currency")]||"SLE").trim().toUpperCase():"SLE",dist=ix("district")>=0?(r[ix("district")]||"").trim():"";const e=[];
     if(title.length<3||title.length>180)e.push("title must be 3–180 characters");
-    if(IMP.cat!=="jobs"||price!==""){if(!/^\d+(\.\d{1,2})?$/.test(price))e.push("price must be a non-negative number")}
+    if(!/^\d+(\.\d{1,2})?$/.test(price))e.push("price must be a non-negative number")
     if(curc!=="SLE")e.push("only SLE pricing is accepted (no conversion)");
     if(!unit||unit.length>40)e.push("unit is required (max 40 characters)");
     const s=USERS.find(u=>u.id===sid);if(!s||s.type==="buyer")e.push("seller_id is not a known seller");else if(s.status==="suspended")e.push("seller is suspended");
@@ -461,7 +463,7 @@ function validateImport(){
     if(e.length)e.forEach(m=>errs.push({row:n,msg:m}));else IMP.rows.push({title,price:Number(price||0),unit,sid,seller:s.name,district:dist});});
   IMP.errs=errs;IMP.ok=!errs.length&&IMP.rows.length>0;
 }
-const SAMPLE_OK=()=>{const s=sellers.filter(u=>u.status!=="suspended").slice(0,3);return"title,price,unit,seller_id,district,currency,description\n"+[["Dell Latitude 5420 i5",5200,"unit"],["Solar floodlight 100W",780,"unit"],["Office chair, ergonomic",1450,"piece"],["Inverter 3KVA",9800,"unit"],["Wi-Fi router dual band",620,"unit"],["HP LaserJet printer",3400,"unit"]].map((r,i)=>`"${r[0]}",${r[1]},${r[2]},${s[i%3].id},Western Area Urban,SLE,"Imported demo row"`).join("\n")};
+const SAMPLE_OK=()=>{const s=sellers.filter(u=>u.status!=="suspended").slice(0,3);return"title,price,unit,seller_id,district,currency,description\n"+[["Concrete mixer 350 L",14500,"unit"],["Plate compactor, petrol",21800,"unit"],["Water pump 3 in",5200,"unit"],["Angle grinder 230 mm",980,"unit"],["Scaffold tube 6 m",310,"length"],["Wheelbarrow, steel",640,"unit"]].map((r,i)=>`"${r[0]}",${r[1]},${r[2]},${s[i%3].id},Western Area Urban,SLE,"Imported demo row"`).join("\n")};
 const SAMPLE_BAD=()=>SAMPLE_OK().replace("5200","abc")+"\nAB,100,,USR-00000,Bo,USD,";
 reg("imports",()=>({custom:()=>{const hist=can("catalogue.import.history.view");return`<div class="eyebrow">Key figures</div><div class="kpis">${[["Imports this month",IMPS.length,""],["Rows accepted",IMPS.filter(i=>i.status==="committed").reduce((s,i)=>s+i.valid,0),""],["Rows rejected",IMPS.reduce((s,i)=>s+i.invalid,0),""],["Awaiting commit",IMP.ok?1:0,IMP.ok?IMP.rows.length+" validated rows":""]].map(([l,v,s])=>`<div class="kpi"><div class="lab">${l}</div><div class="val tnum">${v}</div><div class="sub">${s||"&nbsp;"}</div></div>`).join("")}</div>
  <div class="eyebrow">New import</div><div class="panel"><div class="panel-b bc-form">
@@ -480,7 +482,7 @@ reg("imports",()=>({custom:()=>{const hist=can("catalogue.import.history.view");
   $$$("#impVal").onclick=()=>{if(!guard("catalogue.import.validate","import"))return;if(!IMP.text.trim()){toast("Add a CSV first","bad");return}validateImport();audit("catalogue.import.validate",`Validated import: ${IMP.rows.length} valid, ${IMP.errs.length} error(s)`,"info","");$$$("#impOut").innerHTML=impOut();$$$("#impCommit").disabled=!(IMP.ok&&can("catalogue.import.commit"))};
   $$$("#impCommit").onclick=()=>{if(!guard("catalogue.import.commit","import"))return;if(!IMP.ok){toast("Validate with zero errors before committing","bad");return}
    const dup=IMPS.find(i=>i.key===IMP.key&&i.status==="committed");if(dup){toast(`Refused: identical import already committed as ${dup.id} — no duplicates created`,"bad");audit("catalogue.import.duplicate",`Refused duplicate of ${dup.id}`,"warn","Idempotency key matched");return}
-   const base=Math.max(...LISTINGS.map(l=>+l.id.slice(4)))+1;IMP.rows.forEach((r,i)=>LISTINGS.push({id:"LST-"+(base+i),title:r.title,cat:IMP.cat,sellerId:r.sid,sellerName:r.seller,price:r.price,status:"draft",promoted:null,flags:[],reports:0,created:T(),views:0}));
+   const base=Math.max(...LISTINGS.map(l=>+l.id.slice(4)))+1;IMP.rows.forEach((r,i)=>LISTINGS.push({id:"LST-"+(base+i),title:r.title,unit:r.unit,cat:IMP.cat,sellerId:r.sid,sellerName:r.seller,price:r.price,status:"draft",promoted:null,flags:[],reports:0,created:T(),views:0}));
    const id="IMP-"+String(413+IMPS.filter(i=>/^IMP-04(1[3-9]|[2-9])/.test(i.id)).length).padStart(4,"0");IMPS.unshift({id,op:me(),at:T(),cat:CATNAME[IMP.cat],total:IMP.rows.length,valid:IMP.rows.length,invalid:0,status:"committed",key:IMP.key});
    audit("catalogue.import.commit",`Committed ${id}: ${IMP.rows.length} draft listings in ${CATNAME[IMP.cat]}`,"warn",IMP.key);toast(`${IMP.rows.length} draft listings created (not published)`,"ok");IMP.text="";IMP.rows=[];IMP.errs=[];IMP.ok=false;refreshCounts();show("imports")}}}));
 function impOut(){if(IMP.ok)return`<p style="color:var(--good);font-weight:600">✓ ${IMP.rows.length} row(s) valid — ready to commit as drafts. Idempotency key <span class="mono">${IMP.key}</span></p>`;if(IMP.errs.length)return`<p style="color:var(--crit);font-weight:600">${IMP.errs.length} error(s) — nothing can be committed until all are fixed.</p><div class="tablewrap" style="box-shadow:none"><div class="tscroll"><table style="min-width:0"><thead><tr><th>Row</th><th>Problem</th></tr></thead><tbody>${IMP.errs.slice(0,50).map(e=>`<tr><td class="tnum">${e.row||"—"}</td><td>${esc(e.msg)}</td></tr>`).join("")}</tbody></table></div></div>`;return'<p class="meta">Nothing validated yet.</p>'}
