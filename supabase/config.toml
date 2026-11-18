@@ -25,3 +25,5 @@ enable_signup = true
 
 [analytics]
 enabled = false
+
+# throwaway CI-cost test line (never merge)
