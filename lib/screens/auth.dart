@@ -15,13 +15,15 @@ class SignInScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(24), children: [
           const SizedBox(height: 24),
-          Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                  color: green, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.storefront_rounded,
-                  color: Colors.white, size: 28)),
+          Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                      color: green, borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.storefront_rounded,
+                      color: Colors.white, size: 28))),
           const SizedBox(height: 18),
           const Text('susu luma',
               style: TextStyle(
