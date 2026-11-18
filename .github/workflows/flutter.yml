@@ -31,5 +31,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --check admin/data.js
-      - run: node --check admin/app.js
+      - run: for f in admin/*.js; do node --check "$f"; done

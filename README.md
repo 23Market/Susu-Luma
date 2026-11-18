@@ -40,9 +40,9 @@ Two clickable prototypes with illustrative sample data. Neither connects to a ba
 | Part | Where | What it demonstrates |
 | --- | --- | --- |
 | Mobile app (Flutter) | `lib/` | Buyer and supplier demo personas. Buyer: browse/search, product detail, RFQ form, compare quotes, accept quote, order + delivery tracking, report a problem, saved items, chat. Supplier: dashboard, listings (submitted for review), RFQ inbox, send/revise quotes, confirm orders, post delivery updates, chat. |
-| Ops/admin console (web) | `admin/` | Role-based demo sign-in (admin / reviewer / support): supplier verification decisions with scope + expiry + mandatory reasons, listing moderation with prohibited-term screening, RFQ/quote monitoring, order dispute handling, external payment-evidence recording, support cases, append-only audit log with CSV export, category/screening settings. |
+| Master Admin console (web) | `admin/` | 24 role-gated modules on generated demo data: executive overview and pipeline; buyer organisations; supplier verification dossiers; listings, categories/taxonomy and bulk catalogue import; the full RFQ → quotation → order → delivery → payment-reconciliation chain; support cases; reviews; promotions; analytics; global search; locations; privacy requests; system health; audit log; and a six-role permission matrix. |
 
-Domain rules enforced in the prototypes: every price has an explicit currency and every quantity an explicit unit; accepting a quote snapshots its terms into the order; payment stays `pending_unverified` unless an administrator records external evidence; privileged actions require a reason and are audited; no escrow/wallet/stored value.
+Domain rules enforced in the prototypes: every price has an explicit currency and every quantity an explicit unit, with no silent conversion; accepting a quote snapshots its terms into the order; payment stays `pending_unverified` unless an authorised reconciler records matching external evidence (amount, currency and a provider reference — a mismatch is flagged, never confirmed); order, payment and fulfilment statuses move independently; privileged actions need a reason and are written to an append-only audit log; verification approval needs a complete checklist; catalogue imports create drafts only and are idempotent; contact details are masked and every reveal is logged; no escrow/wallet/stored value.
 
 The two prototypes do not share data yet. Integration (shared Supabase backend, real auth/MFA, server-side RPCs for privileged transitions, signed evidence URLs, RLS tests) is the next gate.
 
@@ -57,13 +57,15 @@ The two prototypes do not share data yet. Integration (shared Supabase backend, 
 
 ### Admin console
 
-No build step. Serve the folder with any static server and open it:
+No build step and no dependencies. Serve the folder with any static server:
 
 ```bash
 cd admin && python3 -m http.server 8080   # then visit http://localhost:8080
 ```
 
-Pick a demo role on the sign-in screen (no password; this is not real authentication). State is kept in the browser's `localStorage`; use Settings → Reset sample data to restore the seed.
+Files: `index.html` (shell), `styles.css`, `app.js` (core: overview, listings, users, reports, messaging, role/permission model), `modules.js` (marketplace modules and the shared directory/drawer/form framework), `boot.js` (start-up).
+
+Use **Viewing as role** in the sidebar to switch between Super Admin, Operations Lead, Trust & Safety, Support, Finance and Analyst; the console enforces the matrix in Settings & Permissions (disabled actions, hidden evidence, refused and audited attempts). Everything runs on generated sample data held in memory — reloading resets it. UI visibility is **not** authorisation: a production build must enforce the same rules server-side (the screens document the proposed `/admin/v1` API surface). The listed status labels (Demo / Partial / API pending / Proposed) are deliberately not "production approved".
 
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
