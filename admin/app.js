@@ -25,7 +25,7 @@ const titlesBy={
 const STAT=["active","active","active","pending","pending","paused","rejected","sold","expired","removed","archived"];
 const reasonCodes=["Prohibited item","Duplicate listing","Misleading price","Wrong category","Suspected scam","Counterfeit goods","Incomplete details","Other"];
 function mkName(){return pick(first)+" "+pick(last)}
-function mask(s,kind){ if(kind==="email"){const[a,b]=s.split("@");return a[0]+"•••@"+b;} return s.replace(/(\+232 \d\d )\d\d\d(.*)/,"$1•••$2"); }
+function mask(s,kind){ if(!s)return "—"; if(kind==="email"){const[a,b]=s.split("@");return a[0]+"•••@"+b;} return s.replace(/(\+232 \d\d )\d\d\d(.*)/,"$1•••$2"); }
 function initials(n){return n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase()}
 
 let tu;let USERS=[], LISTINGS=[], REPORTS=[], CONVOS={}, CAMPAIGNS=[];
@@ -108,7 +108,7 @@ let AUDIT=[
   {at:NOW-320*6e4,actor:"Isatu Bangura",role:"Moderator",sev:"warn",action:"listing.remove",summary:'Removed "iPhone 13 128GB" (counterfeit)',reason:"Counterfeit goods"},
 ];
 let AUDSEQ=9000;
-function audit(action,summary,sev,reason){AUDSEQ++;AUDIT.unshift({id:"AUD-"+AUDSEQ,at:demoNow(),actor:ADMIN_NAME[role],role:PERMS[role].label,sev,action,summary,reason:reason||"",ref:"REQ-"+(AUDSEQ*7919%100000).toString(36).toUpperCase().padStart(4,"0"),key:"idem-"+(AUDSEQ*104729%1e9).toString(36)});renderOverviewFeeds();if(typeof window.onAudit==="function")window.onAudit();}
+function audit(action,summary,sev,reason){if(window.LIVE&&LIVE.on)return; /* live: the database writes the audit entry */AUDSEQ++;AUDIT.unshift({id:"AUD-"+AUDSEQ,at:demoNow(),actor:ADMIN_NAME[role],role:PERMS[role].label,sev,action,summary,reason:reason||"",ref:"REQ-"+(AUDSEQ*7919%100000).toString(36).toUpperCase().padStart(4,"0"),key:"idem-"+(AUDSEQ*104729%1e9).toString(36)});renderOverviewFeeds();if(typeof window.onAudit==="function")window.onAudit();}
 
 /* helpers */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -232,7 +232,7 @@ function listingActionsInline(l){
   return `<button class="btn sm" data-open="${l.id}">View</button>`;
 }
 function renderBulkBar(){
-  const bar=$("#bulkbar");if(!bar)return;
+  const bar=$("#bulkbar");if(!bar)return;if(window.LIVE&&LIVE.on){bar.innerHTML="";return}
   if(!LSEL.size){bar.innerHTML="";return;}
   const canBulk=can("listings.bulk")||can("listings.moderate");
   bar.innerHTML=`<div class="bulkbar"><b>${LSEL.size}</b> selected<span class="sp"></span>
@@ -447,7 +447,7 @@ function drawTemplates(el){
 function tmplRow(t){return `<div class="tmpl"><div class="tt"><b>${esc(t.name)}</b><p>${esc(t.body)}</p><div class="meta" style="margin-top:4px">${t.ch.join(" · ")}</div></div><span class="tk ${t.kind==="auto"?"auto":""}">${t.kind==="auto"?"automatic":"marketing"}</span></div>`;}
 
 /* auto-notice to seller on moderation */
-function notifySeller(sellerId,sellerName,body,channels){
+function notifySeller(sellerId,sellerName,body,channels){if(window.LIVE&&LIVE.on)return; /* live: the database notifies */
   if(!CONVOS[sellerId])CONVOS[sellerId]={sellerId,sellerName,unread:0,messages:[]};
   CONVOS[sellerId].messages.push({from:"system",body,at:demoNow(),channel:channels.join("+"),state:"delivered"});
 }
@@ -496,7 +496,7 @@ const NEEDS_REASON={reject:1,remove:1,restrict:1,suspend:1,recategorize:1,featur
 const DESTRUCTIVE={remove:1,suspend:1};
 const ACTVERB={approve:"Approve listing",reject:"Reject listing",pause:"Pause listing",resume:"Resume listing",remove:"Remove listing",restore:"Restore listing",feature:"Promote listing",recategorize:"Recategorise listing",restrict:"Restrict account",suspend:"Suspend account",reinstate:"Reinstate account",verify:"Verification decision",case:"Open case"};
 function doListingAction(act,id){const l=LISTINGS.find(x=>x.id===id);if(!l)return;const pm={approve:"listings.moderate",reject:"listings.moderate",pause:"listings.moderate",resume:"listings.moderate",remove:"listings.remove",restore:"listings.restore",feature:"listings.feature",recategorize:"listings.recategorize"};if(!can(pm[act])||!inScope(l.cat)){refuse(pm[act],`listing ${id}`);return;}openActionModal({kind:"listing",act,target:l,title:ACTVERB[act],label:`${l.id} — ${l.title}`});}
-function doUserAction(act,id){const u=USERS.find(x=>x.id===id);if(!u)return;const pm={restrict:"users.restrict",suspend:"users.suspend",reinstate:"users.reinstate",verify:"users.verify",case:"users.cases"};if(!can(pm[act])){refuse(pm[act],`account ${id}`);return;}openActionModal({kind:"user",act,target:u,title:ACTVERB[act],label:`${u.id} — ${u.name}`});}
+function doUserAction(act,id){if(window.LIVE&&LIVE.on){toast("Account actions are not connected to the database yet in live mode","bad");return}const u=USERS.find(x=>x.id===id);if(!u)return;const pm={restrict:"users.restrict",suspend:"users.suspend",reinstate:"users.reinstate",verify:"users.verify",case:"users.cases"};if(!can(pm[act])){refuse(pm[act],`account ${id}`);return;}openActionModal({kind:"user",act,target:u,title:ACTVERB[act],label:`${u.id} — ${u.name}`});}
 function refuse(perm,on){toast(`Refused: your role can't do that (${perm})`,"bad");audit("access.denied",`Refused ${perm} on ${on}`,"warn","Permission denied");}
 function openActionModal(o){
   const needReason=NEEDS_REASON[o.act],destructive=DESTRUCTIVE[o.act];
@@ -516,6 +516,12 @@ function closeModal(){$("#modal").classList.remove("on");$("#modal").setAttribut
 function applyAction(o){
   const reason=$("#mReason")?$("#mReason").value:"";const note=$("#mNote")?$("#mNote").value.trim():"";
   if(["reject","remove","suspend"].includes(o.act)&&!note){toast("A note is required for this action","bad");return;}
+  if(window.LIVE&&LIVE.on&&o.kind==="listing"){
+    if(["feature","recategorize"].includes(o.act)){toast("Not connected to the database yet in live mode","bad");return}
+    const why=(reason&&note?reason+" — "+note:(note||reason)).trim();
+    if(["reject","pause","remove","restore"].includes(o.act)&&why.length<8){toast("Add a note: the reason must be at least 8 characters","bad");return}
+    closeModal();LIVE.act("admin_moderate_listing",{p_listing:o.target._id,p_action:o.act,p_reason:why||null},"Listing "+o.act+" done");return;
+  }
   const t=o.target;
   if(o.kind==="listing"){
     const map={approve:"active",reject:"rejected",pause:"paused",resume:"active",remove:"removed",restore:"pending"};
@@ -543,7 +549,7 @@ function applyAction(o){
 function openReveal(id){const u=USERS.find(x=>x.id===id);if(!u)return;$("#modalBox").innerHTML=`<h3>Reveal contact details</h3><p>Revealing ${esc(u.name)}'s email and phone is logged with your name and the purpose you choose.</p><label>Purpose</label><select id="mPurpose"><option value="ticket">Support ticket</option><option value="fraud">Fraud investigation</option><option value="legal">Legal request</option><option value="recovery">Account recovery</option></select><div class="acts"><button class="btn" data-cancel>Cancel</button><button class="btn pri" id="mReveal">Reveal &amp; log</button></div>`;$("#modal").classList.add("on");$("#modal").setAttribute("aria-hidden","false");$("#modalBox").querySelector("[data-cancel]").onclick=closeModal;$("#mReveal").onclick=()=>{const p=$("#mPurpose").value;revealState[id]=p;audit("user.pii.reveal",`Revealed contact details for ${u.name}`,"warn",p);closeModal();openUser(id);toast("Details revealed — logged","ok");};}
 
 /* bulk */
-function openBulkModal(act){
+function openBulkModal(act){if(window.LIVE&&LIVE.on){toast("Bulk moderation is not connected to the database yet in live mode","bad");return}
   const ids=[...LSEL];const eligible=LISTINGS.filter(l=>ids.includes(l.id)&&inScope(l.cat));
   if(!eligible.length){toast("No selected listings are in your scope","bad");return;}
   const reasonSel=act!=="approve"?`<label>Reason</label><select id="mReason">${reasonCodes.map(r=>`<option>${r}</option>`).join("")}</select>`:"";

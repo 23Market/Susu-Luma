@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co; base-uri 'none'; form-action 'self'">
 <title>Susu Luma Master Admin</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="styles.css">
@@ -44,8 +45,11 @@
 <aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true"></aside>
 <div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true"><div class="box" id="modalBox"></div></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
 <script src="app.js"></script>
 <script src="modules.js"></script>
+<script src="live.js"></script>
 <script src="boot.js"></script>
 </body>
 </html>

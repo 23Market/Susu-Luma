@@ -336,3 +336,16 @@ a.xl:hover{text-decoration:underline}
 .modal input[type=text]{margin-bottom:13px}
 input[type=file]{width:100%;font:inherit;font-size:12.5px;color:var(--fg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px}
 .drawer-b .tablewrap{margin-top:2px}
+
+/* ---- live sign-in gate ---- */
+#liveGate{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;padding:16px}
+#liveGate[hidden]{display:none}
+.gatebox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);width:min(420px,100%);padding:24px}
+.gatebox .logo{font-family:var(--disp);font-weight:800;font-size:20px;color:var(--accent);margin-bottom:12px}
+.gatebox .logo small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint)}
+.gatebox h1{font-size:20px;margin:0 0 6px}.gatebox .muted{color:var(--fg-muted);margin:0 0 14px}
+.gatebox label{display:block;font-size:12px;font-weight:600;color:var(--fg-muted);margin:10px 0}
+.gatebox input{display:block;width:100%;margin-top:5px;font:inherit;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2);color:var(--fg)}
+.gatebox .btn{margin-top:6px}.gatebox .gmsg{color:var(--crit);font-size:12.5px;min-height:1em;margin:8px 0 0}
+.gatebox img{display:block;margin:8px auto;background:#fff;padding:6px;border-radius:8px}
+.env-pill.live{color:var(--good);background:var(--good-weak);border-color:color-mix(in srgb,var(--good) 30%,transparent)}.env-pill.live::before{background:var(--good)}

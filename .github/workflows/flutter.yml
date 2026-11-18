@@ -32,3 +32,29 @@ jobs:
         with:
           node-version: 22
       - run: for f in admin/*.js; do node --check "$f"; done
+
+  sql-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Admin permission seed matches the console role matrix
+        run: |
+          missing=$(node supabase/tools/gen-admin-permissions.mjs | grep -vxFf supabase/migrations/20261101000100_taxonomy_and_admin_access.sql || true)
+          if [ -n "$missing" ]; then echo "Seed drift:"; echo "$missing"; exit 1; fi
+      - name: Migrations + persona tests
+        run: supabase/tests/run.sh

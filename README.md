@@ -39,12 +39,19 @@ Two clickable prototypes with illustrative sample data. Neither connects to a ba
 
 | Part | Where | What it demonstrates |
 | --- | --- | --- |
-| Mobile app (Flutter) | `lib/` | Buyer and supplier demo personas. Buyer: browse/search, product detail, RFQ form, compare quotes, accept quote, order + delivery tracking, report a problem, saved items, chat. Supplier: dashboard, listings (submitted for review), RFQ inbox, send/revise quotes, confirm orders, post delivery updates, chat. |
+| Mobile app (Flutter) | `lib/` | Demo mode: buyer and supplier personas on sample data. Live mode: real sign-in against Supabase. Features: Buyer: browse/search, product detail, RFQ form, compare quotes, accept quote, order + delivery tracking, report a problem, saved items, chat. Supplier: dashboard, listings (submitted for review), RFQ inbox, send/revise quotes, confirm orders, post delivery updates, chat. |
 | Master Admin console (web) | `admin/` | 24 role-gated modules on generated demo data: executive overview and pipeline; buyer organisations; supplier verification dossiers; listings, categories/taxonomy and bulk catalogue import; the full RFQ → quotation → order → delivery → payment-reconciliation chain; support cases; reviews; promotions; analytics; global search; locations; privacy requests; system health; audit log; and a six-role permission matrix. |
 
 Domain rules enforced in the prototypes: every price has an explicit currency and every quantity an explicit unit, with no silent conversion; accepting a quote snapshots its terms into the order; payment stays `pending_unverified` unless an authorised reconciler records matching external evidence (amount, currency and a provider reference — a mismatch is flagged, never confirmed); order, payment and fulfilment statuses move independently; privileged actions need a reason and are written to an append-only audit log; verification approval needs a complete checklist; catalogue imports create drafts only and are idempotent; contact details are masked and every reveal is logged; no escrow/wallet/stored value.
 
-The two prototypes do not share data yet. Integration (shared Supabase backend, real auth/MFA, server-side RPCs for privileged transitions, signed evidence URLs, RLS tests) is the next gate.
+### Backend (Supabase) and live mode
+
+`supabase/` holds migrations for the B2B taxonomy, tenant-isolating RLS, admin RBAC with MFA, an append-only audit log, and server-side RPCs for every state change (RFQ → quote → accept → order → delivery → payment reconciliation, verification, moderation). Both clients can run against it:
+
+- **App**: pass `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_PUBLISHABLE_KEY=…` for real sign-in, business onboarding and live data. Without them it runs in labelled demo mode.
+- **Console**: set the URL and publishable key in `admin/config.js` for password + TOTP sign-in, database-defined roles and live data. Empty = demo mode.
+
+See `supabase/README.md` for setup, the first-admin bootstrap, the enforced rules and the honest list of what is not connected yet. The migrations and their tests run on plain PostgreSQL in CI; they have **not** been applied to a hosted Supabase project.
 
 ## Local development
 

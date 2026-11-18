@@ -148,11 +148,13 @@ const PROMO={},PROMO_ENDED=[];
 const INCIDENTS=[{id:"INC-212",title:"Media upload degraded",sev:"warn",at:T()-3*HR,ack:false,note:"Thumbnails delayed ~4 min"},{id:"INC-211",title:"SMS gateway latency spike",sev:"info",at:T()-30*HR,ack:true,note:"Resolved by provider"},{id:"INC-209",title:"Failed job: media-thumbnailer",sev:"crit",at:T()-5*HR,ack:false,note:"3 jobs retrying"}];
 let FAILED_JOBS=3;
 
-window.__mod={ORGS,RFQS,QUOTES,ORDERS,PAYS,VERIFS,CASES,REVIEWS,PRIV,TAX,LOCS,IMPS,open:(v,id)=>openDetail(v,id)};
+window.__mod={ORGS,RFQS,QUOTES,ORDERS,PAYS,VERIFS,CASES,REVIEWS,PRIV,TAX,LOCS,IMPS,open:(v,id)=>openDetail(v,id),get form(){return form},REASON:null,get jump(){return jump},get redraw(){return redraw}};
 
 /* ===== framework ===== */
 const MS={},CFGS={},REG={};let CUR=null,ACTS=[],TOOLS=[];const PAGE=12;
-const lock=perm=>can(perm)?"":'disabled data-lock title="Not permitted for your role"';
+const LOCALP=["categories.edit","categories.publish","rfqs.notes.manage","rfqs.investigate","quotes.investigate","rfqs.export","quotes.export","orders.export","payments.export","analytics.export","audit.export"]; // not backed by the database yet
+const liveLocal=perm=>window.LIVE&&LIVE.on&&LOCALP.includes(perm);
+const lock=perm=>liveLocal(perm)?'disabled data-lock title="Not available in live mode yet"':can(perm)?"":'disabled data-lock title="Not permitted for your role"';
 const sec=(t,h)=>`<div><div class="sec-t">${t}</div>${h}</div>`;
 const dl=p=>`<dl class="dl">${p.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
 const link=(v,id,txt)=>`<a href="#" class="xl" data-gv="${v}" data-gid="${esc(id)}">${esc(txt||id)}</a>`;
@@ -172,6 +174,7 @@ function form(o){ // {title,intro,fields:[{id,label,type,options,req,ph,val}],ok
   const first=$("#modalBox").querySelector("select,textarea,input");if(first)first.focus();
 }
 const REASON={id:"reason",label:"Reason (recorded in the audit log)",type:"textarea",req:true,min:8,ph:"At least 8 characters"};
+window.__mod.REASON=REASON;
 function guard(perm,on){if(can(perm))return true;refuse(perm,on);return false}
 function done(msg){toast(msg,"ok");refreshCounts();redraw()}
 
@@ -201,6 +204,7 @@ function openDetail(id,rowId){
   const cfg=CFGS[id]||(REG[id]&&(CFGS[id]=REG[id]()));if(!cfg||!cfg.detail)return;
   const row=cfg.rows().find(r=>cfg.rid(r)===rowId);if(!row)return;
   const d=cfg.detail(row);CUR={id,rowId};ACTS=d.actions||[];
+  if(window.LIVE&&LIVE.on&&LIVE.actions&&LIVE.actions[id])ACTS=LIVE.actions[id](row);
   $("#drawer").innerHTML=`<div class="drawer-h"><div><div class="hid">${d.kicker||""}</div><h2>${d.title}</h2></div><button class="closex" data-close aria-label="Close">✕</button></div><div class="drawer-b">${d.body}</div><div class="drawer-f">${ACTS.map((a,i)=>`<button class="btn ${a.cls||""}" data-mact="${i}" ${a.perm?lock(a.perm):""}>${a.label}</button>`).join("")||'<span class="meta">No actions for this record.</span>'}</div>`;
   showDrawer();
 }
@@ -210,7 +214,7 @@ function jump(view,rid){if(!MODULES[view]||!can(MODULES[view].perm)){refuse(MODU
 document.addEventListener("click",e=>{
   const t=e.target;
   const gv=t.closest("[data-gv]");if(gv){e.preventDefault();jump(gv.dataset.gv,gv.dataset.gid);return}
-  const act=t.closest("[data-mact]");if(act&&!act.disabled){const a=ACTS[+act.dataset.mact];if(!a)return;if(a.perm&&!guard(a.perm,(CUR?CUR.rowId:"")))return;a.fn();return}
+  const act=t.closest("[data-mact]");if(act&&!act.disabled){const a=ACTS[+act.dataset.mact];if(!a)return;if(a.perm&&liveLocal(a.perm)){toast("Not available in live mode yet","bad");return}if(a.perm&&!guard(a.perm,(CUR?CUR.rowId:"")))return;a.fn();return}
   const tool=t.closest("[data-mtool]");if(tool&&!tool.disabled){const a=TOOLS[+tool.dataset.mtool];if(a)a[3]();return}
   const f=t.closest("[data-mf]");if(f&&MS[currentView]){MS[currentView].f=f.dataset.mf;MS[currentView].page=0;drawAll(currentView);return}
   const k=t.closest("[data-mkpi]");if(k&&MS[currentView]){const s=MS[currentView];s.f=s.f===k.dataset.mkpi?"all":k.dataset.mkpi;s.page=0;drawAll(currentView);return}
@@ -233,8 +237,8 @@ const bar=(a,b)=>`<span class="mbar"><i style="width:${b?Math.round(a/b*100):0}%
 const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
 const KPI=(l,v,s,c,f)=>[l,v,s,c,f];
 
-document.addEventListener("click",e=>{const c=e.target.closest("[data-chk]");if(!c||c.disabled)return;const v=VERIFS.find(x=>x.id===CUR.rowId);if(!v||!guard("verification.decide",v.id))return;const it=v.checklist[+c.dataset.chk];it.done=!it.done;v.history.push({at:T(),text:`${me()} marked “${it.c}” ${it.done?"verified":"not verified"}`});audit("verification.checklist",`${it.done?"Verified":"Unverified"} “${it.c}” on ${v.id}`,"info","");redraw()});
-document.addEventListener("click",e=>{const c=e.target.closest("[data-evid]");if(!c||c.disabled)return;if(!guard("verification.evidence.view","evidence"))return;audit("verification.evidence.view",`Opened evidence ${c.dataset.evid} on ${CUR.rowId}`,"warn","Evidence access logged");toast("Short-lived signed link issued (demo) · access logged","ok")});
+document.addEventListener("click",e=>{const c=e.target.closest("[data-chk]");if(!c||c.disabled)return;const v=VERIFS.find(x=>x.id===CUR.rowId);if(!v||!guard("verification.decide",v.id))return;const it=v.checklist[+c.dataset.chk];if(window.LIVE&&LIVE.on){LIVE.act("admin_set_checklist",{p_case:v._id,p_index:+c.dataset.chk,p_done:!it.done},"Checklist updated");return}it.done=!it.done;v.history.push({at:T(),text:`${me()} marked “${it.c}” ${it.done?"verified":"not verified"}`});audit("verification.checklist",`${it.done?"Verified":"Unverified"} “${it.c}” on ${v.id}`,"info","");redraw()});
+document.addEventListener("click",e=>{const c=e.target.closest("[data-evid]");if(!c||c.disabled)return;if(!guard("verification.evidence.view","evidence"))return;if(window.LIVE&&LIVE.on){const v=VERIFS.find(x=>x.id===CUR.rowId);LIVE.evidence(v._id,c.dataset.evid);return}audit("verification.evidence.view",`Opened evidence ${c.dataset.evid} on ${CUR.rowId}`,"warn","Evidence access logged");toast("Short-lived signed link issued (demo) · access logged","ok")});
 
 reg("orgs",()=>({ph:"Search organisation, owner, district…",rows:()=>ORGS,rid:o=>o.id,status:o=>o.status,search:o=>[o.name,o.owner,o.district,o.id,o.sector].join(" "),sort:(a,b)=>b.joined-a.joined,
  filters:[["all","All"],["active","Active"],["suspended","Suspended"]],

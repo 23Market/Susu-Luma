@@ -20,7 +20,7 @@ Use Flutter for the Android-first mobile client and Supabase for managed Postgre
 - Controlled/high-risk goods stay blocked or manually gated pending policy and permit review.
 
 ## Migration status
-supabase/migrations/20261017000100_marketplace_foundation.sql is a draft schema only. It has not been applied to a Supabase project and is not production approved. It intentionally has no broad client write policies for RFQ routing, quote acceptance, orders, payment status, verification decisions or audit events. Organization onboarding needs a reviewed transaction/RPC to create the organization and its owner membership atomically before it is usable.
+The migrations in `supabase/migrations/` (foundation plus access control, workflows, admin operations, storage and counterparty visibility) have been applied and exercised only on a local plain PostgreSQL instance with stubbed Supabase auth (`supabase/tests/`, also run in CI). They have not been applied to a hosted Supabase project, Storage policies are untested against real Storage, and none of it is production approved. Clients have no write policies on RFQs, quotes, orders, payments, verification or audit data; every transition is a reviewed `SECURITY DEFINER` function, and admin functions require an active admin role plus an MFA (aal2) session. See `supabase/README.md` for the rule list and known limits.
 
 ## Gate criteria
 - G0: sponsor, product owner, pilot scope and resource assumptions.
