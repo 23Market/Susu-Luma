@@ -29,6 +29,21 @@ Source: Product Owner (Joseph Momoh) replies in the working session, Wed 18 Nov 
   3. **Security and Legal review.** The directive requires it for material scope changes. A pilot footprint wider than the directive's two Western Area districts is such a change. **No reviewer is assigned.**
 - **Pilot limits unchanged by this decision:** max 150 invited buyers, max 50 verified suppliers, record-only payments, mandatory audit logging, support escalation and emergency pause. Widening the footprint does not raise these caps.
 
+## Update, 18 Nov 2026 (~01:40 Europe/Berlin): the pilot-scope conflict was resolved by the Product Owner
+
+A later directive said "Initial pilot restricted to Western Area Urban and Western Area Rural", which conflicted with Decision 2 above. The Product Owner was asked which applies and chose:
+
+> **First pilot = all 16 in-force districts.**
+
+- **Supersedes both** "Western Area only" (the directive) and "all 18" (Decision 2) **for the first pilot.**
+- **Bandajuma and Kpanguma stay proposed and inactive.** They are not in force and have no published boundaries.
+- **Data model:** keep all districts in the reference data; only the 16 in-force districts may be selectable in the pilot. The five regions and sixteen districts register stands.
+- **Gate:** operating outside the Western Area still needs the Security and Legal review the directive requires for material scope changes. **No reviewer is assigned**, so no district outside the Western Area should go live until one has reviewed. Unverified localities (areas) stay inactive until an authoritative source is confirmed.
+- **Caps unchanged:** max 150 invited buyers, max 50 verified suppliers, record-only payments, mandatory audit logging.
+- Not a gate sign-off. The areas source file and layer (wards or chiefdoms) are still open.
+
+Decision 1 update: the web console framework is **recommended** (not approved) as React + TypeScript + Vite in draft PR #77; hosting and MFA enrolment remain undecided.
+
 ## What the code does and does not do today
 
 - `organizations.district` and `listings.district` remain **free text**. There is no districts reference table and no areas data. See `docs/SECURE_FOUNDATION.md`, "Known limitations".
