@@ -1,0 +1,38 @@
+name: Database security
+
+# Moved out of flutter.yml so it can be skipped when no database file changed (see docs/CI_COST_CONTROLS.md).
+# Same steps, same job name (`database-security`) as before. Authoritative database check; a pass here is
+# NOT independent approval (see docs/SECURE_FOUNDATION.md).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-security.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  database-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.58.5
+      - run: supabase start
+      - run: supabase db lint --local --level warning
+      - run: supabase test db
+      - if: always()
+        run: supabase stop --no-backup

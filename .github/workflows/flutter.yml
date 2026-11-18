@@ -1,30 +1,46 @@
 name: Flutter checks
 
+# Cost controls (see docs/CI_COST_CONTROLS.md):
+# - Runs on pull requests to ANY base branch (stacked PRs included) and on pushes to main only.
+#   There is no separate branch-push trigger, so one commit is never built twice.
+# - Skipped when a change touches only non-Flutter files (docs, database, web console, prototype).
+# - A newer push to the same pull request cancels the older, now pointless, run.
+# - A job that hangs is stopped after 10 minutes instead of the 6-hour default.
 on:
   push:
-    # work/** so E7 branches get checks even when their PR is stacked on a non-main base.
-    branches: [main, 'work/**']
-  pull_request:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'supabase/**'
+      - 'admin-web/**'
+      - 'prototype/**'
+      - 'scripts/local-db/**'
+      - '**.md'
+      - '.github/workflows/database-security.yml'
+      - '.github/workflows/admin-web.yml'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'supabase/**'
+      - 'admin-web/**'
+      - 'prototype/**'
+      - 'scripts/local-db/**'
+      - '**.md'
+      - '.github/workflows/database-security.yml'
+      - '.github/workflows/admin-web.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  database-security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.58.5
-      - run: supabase start
-      - run: supabase db lint --local --level warning
-      - run: supabase test db
-      - if: always()
-        run: supabase stop --no-backup
   flutter:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -36,4 +52,3 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
-
