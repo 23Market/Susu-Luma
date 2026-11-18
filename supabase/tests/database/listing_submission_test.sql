@@ -26,7 +26,7 @@ values ('20000000-0000-0000-0000-000000000001','Dated cement','Construction','ba
   '42501', 'new row violates row-level security policy for table "listings"', 'Client publication timestamp denied');
 select throws_ok($$insert into public.organizations(legal_name,display_name,created_by)
 values ('Orphan organization','Orphan organization',auth.uid())$$,
-  '42501', 'new row violates row-level security policy for table "organizations"', 'Non-atomic onboarding denied');
+  '42501', 'permission denied for table organizations', 'Non-atomic onboarding denied (INSERT privilege revoked by 20261117000100_secure_foundation)');
 
 set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000002","role":"authenticated"}';
 select throws_ok($$insert into public.listings(organization_id,title,category,quantity_unit,created_by)

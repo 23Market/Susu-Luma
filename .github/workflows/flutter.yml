@@ -2,7 +2,8 @@ name: Flutter checks
 
 on:
   push:
-    branches: [main]
+    # work/** so E7 branches get checks even when their PR is stacked on a non-main base.
+    branches: [main, 'work/**']
   pull_request:
     branches: [main]
 
