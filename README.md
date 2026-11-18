@@ -44,6 +44,17 @@ The initial commit introduces a lightweight Flutter app shell and a draft databa
 3. Run `flutter analyze` and `flutter test`.
 4. Run `flutter run` on an Android emulator/device.
 
+## Admin web foundation
+
+The separate responsive Admin console is in `admin-web/`. It is a read-only foundation, uses server-provided capabilities, and has no live authentication or Supabase adapter. Unconfigured builds fail closed; the labelled synthetic-data mode is development-only.
+
+1. Install Node.js 22.
+2. From `admin-web/`, run `npm ci`.
+3. Use `npm run dev:mock` to view the clearly labelled synthetic-data shell, or `npm run dev` to exercise the unconfigured fail-closed state.
+4. Run `npm run verify` for typechecking, tests, production build and a mock-data/secret bundle check.
+
+Do not treat this foundation as production-ready. A live adapter, sign-in/MFA enrollment, write actions, hosting headers and independent review remain outstanding.
+
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
 ## Waterfall gates
