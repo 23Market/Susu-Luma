@@ -84,11 +84,11 @@ describe('session states (full-page)', () => {
     mount({
       ...createMockApi('reviewer'),
       getAccess: async () => {
-        throw new Error('connection string postgres://user:pw@10.0.0.5/db refused');
+        throw new Error('relation "secrets" does not exist on host 10.0.0.5');
       },
     });
     expect(await screen.findByRole('heading', { name: 'Admin service unavailable' })).toBeInTheDocument();
-    expect(screen.queryByText(/postgres:\/\//)).not.toBeInTheDocument();
+    expect(screen.queryByText(/10\.0\.0\.5|secrets/)).not.toBeInTheDocument();
   });
 
   it('fails closed when the console is not configured', async () => {
