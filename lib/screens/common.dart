@@ -507,6 +507,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _c = TextEditingController();
+  bool _sending = false;
   @override
   void dispose() {
     _c.dispose();
@@ -516,7 +517,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final msgs = widget.thread.messages;
+    final current =
+        store.myThreads.where((t) => t.id == widget.thread.id).firstOrNull;
+    final msgs = current?.messages ??
+        (store.isLive ? <ChatMessage>[] : widget.thread.messages);
     return Scaffold(
       appBar: AppBar(title: Text(widget.thread.title)),
       body: Column(children: [
@@ -547,6 +551,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                       child: TextField(
                           controller: _c,
+                          enabled: !_sending,
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _send(store),
                           decoration: const InputDecoration(
@@ -554,7 +559,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 8),
                   IconButton.filled(
                       tooltip: 'Send',
-                      onPressed: () => _send(store),
+                      onPressed: _sending ? null : () => _send(store),
                       icon: const Icon(Icons.send_rounded)),
                 ]))),
       ]),
@@ -562,9 +567,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _send(AppStore store) async {
+    if (_sending || _c.text.trim().isEmpty) return;
     final text = _c.text;
-    _c.clear();
-    await guarded(context, () => store.send(widget.thread, text));
+    setState(() => _sending = true);
+    try {
+      final sent = await guarded(context, () async {
+        await store.send(widget.thread, text);
+        return true;
+      });
+      if (sent == true && mounted) _c.clear();
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 }
 

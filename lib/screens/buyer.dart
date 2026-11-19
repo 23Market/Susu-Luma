@@ -381,7 +381,8 @@ class ProductCard extends StatelessWidget {
             IconButton(
                 tooltip: saved ? 'Remove saved item' : 'Save item',
                 visualDensity: VisualDensity.compact,
-                onPressed: () => store.toggleSaved(p.id),
+                onPressed: () =>
+                    guarded(context, () => store.toggleSaved(p.id)),
                 icon: Icon(
                     saved
                         ? Icons.bookmark_rounded

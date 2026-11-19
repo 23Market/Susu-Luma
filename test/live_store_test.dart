@@ -447,6 +447,34 @@ void main() {
     });
   });
 
+  group('saved products', () {
+    test('refresh restores saved ids and logout clears them', () async {
+      final api = _buyerApi();
+      api.tables['saved_products'] = [
+        {'listing_id': 'lst-1'}
+      ];
+      final store = LiveAppStore(api);
+      await store.signInWithPassword('a@b.co', 'password123');
+      expect(store.saved, contains('lst-1'));
+      store.signOut();
+      expect(store.saved, isEmpty);
+    });
+
+    test('failed save does not claim success and can be retried', () async {
+      final api = _buyerApi();
+      final store = LiveAppStore(api);
+      await store.signInWithPassword('a@b.co', 'password123');
+      api.rpcError = StateError('network unavailable');
+      await expectLater(store.toggleSaved('lst-1'), throwsStateError);
+      expect(store.saved, isEmpty);
+      api.rpcError = null;
+      await store.toggleSaved('lst-1');
+      expect(store.saved, contains('lst-1'));
+      expect(api.calls.last.fn, 'set_saved_product');
+      expect(api.calls.last.params, {'p_listing': 'lst-1', 'p_saved': true});
+    });
+  });
+
   group('live UI', () {
     testWidgets('wrong credentials show a friendly error and stay on sign-in',
         (tester) async {

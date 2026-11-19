@@ -72,6 +72,7 @@ class LiveAppStore extends AppStore {
     role = null;
     _orgId = null;
     _me = null;
+    saved.clear();
     for (final l in <List<Object?>>[
       products,
       rfqs,
@@ -112,6 +113,10 @@ class LiveAppStore extends AppStore {
           name: '${org['display_name']}',
           district: '${org['district'] ?? ''}');
 
+      final savedRows = await api.select('saved_products');
+      saved
+        ..clear()
+        ..addAll(savedRows.map((r) => '${r['listing_id']}'));
       final cats = await api.select('categories');
       _catNameById = {for (final c in cats) '${c['id']}': '${c['name']}'};
       _catIdByName = {for (final c in cats) '${c['name']}': '${c['id']}'};
@@ -304,6 +309,21 @@ class LiveAppStore extends AppStore {
     await api.rpc('submit_listing_for_review', {'p_listing': row['id']});
     await refresh();
     return products.firstWhere((p) => p.id == '${row['id']}');
+  }
+
+  @override
+  Future<void> toggleSaved(String productId) async {
+    final actor = api.userId;
+    final next = !saved.contains(productId);
+    await api
+        .rpc('set_saved_product', {'p_listing': productId, 'p_saved': next});
+    if (actor != api.userId || phase != AuthPhase.ready) return;
+    if (next) {
+      saved.add(productId);
+    } else {
+      saved.remove(productId);
+    }
+    notifyListeners();
   }
 
   // ---- messaging ----
