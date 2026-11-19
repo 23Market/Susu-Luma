@@ -23,6 +23,8 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
+      - name: Verify demo web build
+        run: flutter build web --release --no-web-resources-cdn --pwa-strategy=none --base-href "/${{ github.event.repository.name }}/app/"
 
   admin-console:
     runs-on: ubuntu-latest
