@@ -106,7 +106,7 @@ class AppStore extends ChangeNotifier {
     }).toList();
   }
 
-  void toggleSaved(String productId) {
+  Future<void> toggleSaved(String productId) async {
     saved.contains(productId) ? saved.remove(productId) : saved.add(productId);
     notifyListeners();
   }
