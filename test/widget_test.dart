@@ -101,6 +101,8 @@ void main() {
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
           'Keep this draft');
       store.fail = false;
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Send'));
       await tester.pumpAndSettle();
       expect(store.threads.first.messages.last.text, 'Keep this draft');
