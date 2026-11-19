@@ -75,6 +75,42 @@ void main() {
   });
 
   group('app flows', () {
+    testWidgets('search reset clears both the query and category',
+        (tester) async {
+      await _boot(tester, Role.buyer);
+      await tester.tap(find.text('Discover').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'no matching product');
+      await tester.pumpAndSettle();
+      expect(find.text('No listings match your search and category.'),
+          findsOneWidget);
+      await tester.tap(find.text('Show all products'));
+      await tester.pumpAndSettle();
+      expect(find.text('Portland Cement 50 kg'), findsOneWidget);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          isEmpty);
+      expect(find.text('Clear search and filters'), findsNothing);
+    });
+
+    testWidgets('narrow screens retain navigation and readable categories',
+        (tester) async {
+      await _boot(tester, Role.buyer);
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpAndSettle();
+      expect(find.text('Find products'), findsOneWidget);
+      await tester.tap(find.text('Discover').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'cocoa');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Orders').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discover').last);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          'cocoa');
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('sign-in offers both personas with prototype disclaimer',
         (tester) async {
       await tester.pumpWidget(SusuLumaApp(store: AppStore()));
