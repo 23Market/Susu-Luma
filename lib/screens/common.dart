@@ -517,9 +517,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final current = store.myThreads
-        .where((t) => t.id == widget.thread.id)
-        .firstOrNull;
+    final current =
+        store.myThreads.where((t) => t.id == widget.thread.id).firstOrNull;
     final msgs = current?.messages ??
         (store.isLive ? <ChatMessage>[] : widget.thread.messages);
     return Scaffold(
