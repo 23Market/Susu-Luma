@@ -25,6 +25,19 @@ class BuyerShell extends StatefulWidget {
 class _BuyerShellState extends State<BuyerShell> {
   int _tab = 0;
   String _query = '', _category = 'All';
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _resetSearch() => setState(() {
+        _search.clear();
+        _query = '';
+        _category = 'All';
+      });
 
   void _go(int tab, {String? category}) => setState(() {
         _tab = tab;
@@ -37,6 +50,8 @@ class _BuyerShellState extends State<BuyerShell> {
     final pages = <Widget>[
       _Home(onTab: _go),
       _Discover(
+          controller: _search,
+          onReset: _resetSearch,
           query: _query,
           category: _category,
           onQuery: (v) => setState(() => _query = v),
@@ -46,8 +61,13 @@ class _BuyerShellState extends State<BuyerShell> {
       const MessagesTab(),
     ];
     return Scaffold(
-      appBar: _appBar(context, 'Buyer · ${store.myBusiness.name}'),
-      body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
+      appBar: _appBar(context,
+          '${const ['Home', 'Discover', 'RFQs', 'Orders', 'Messages'][_tab]} · ${store.myBusiness.name}'),
+      body: SafeArea(
+          child: Center(
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: IndexedStack(index: _tab, children: pages)))),
       bottomNavigationBar: NavigationBar(
           selectedIndex: _tab,
           onDestinationSelected: _go,
@@ -170,7 +190,7 @@ class _Home extends StatelessWidget {
                   fontWeight: FontWeight.w800, fontSize: 18, color: ink)),
           const SizedBox(height: 10),
           SizedBox(
-              height: 92,
+              height: 116,
               child: ListView(scrollDirection: Axis.horizontal, children: [
                 for (final c in categories.skip(1))
                   _Cat(c, onTap: () => onTab(1, category: c)),
@@ -205,7 +225,7 @@ class _Cat extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-                width: 108,
+                width: 144,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                     color: Colors.white,
@@ -224,7 +244,7 @@ class _Cat extends StatelessWidget {
                           child: const Icon(Icons.category_outlined,
                               color: green, size: 19)),
                       Text(title,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w700)),
@@ -234,10 +254,14 @@ class _Cat extends StatelessWidget {
 
 class _Discover extends StatelessWidget {
   const _Discover(
-      {required this.query,
+      {required this.controller,
+      required this.onReset,
+      required this.query,
       required this.category,
       required this.onQuery,
       required this.onCategory});
+  final TextEditingController controller;
+  final VoidCallback onReset;
   final String query, category;
   final ValueChanged<String> onQuery, onCategory;
   @override
@@ -250,6 +274,9 @@ class _Discover extends StatelessWidget {
           const PageTitle('Discover products',
               'Find the right supplier for your business.'),
           TextField(
+              controller: controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.search_rounded),
                   hintText: 'Product, material or supplier'),
@@ -262,16 +289,24 @@ class _Discover extends StatelessWidget {
                   selected: category == c,
                   onSelected: (_) => onCategory(c))
           ]),
+          if (query.isNotEmpty || category != 'All')
+            Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                    onPressed: onReset,
+                    icon: const Icon(Icons.filter_alt_off_outlined),
+                    label: const Text('Clear search and filters'))),
           const SizedBox(height: 12),
           Text(
-              '${results.length} sample listing${results.length == 1 ? '' : 's'}',
+              '${results.length} ${store.isLive ? '' : 'sample '}listing${results.length == 1 ? '' : 's'}',
               style: const TextStyle(color: muted, fontSize: 12)),
           const SizedBox(height: 8),
           if (results.isEmpty)
-            const Padding(
-                padding: EdgeInsets.all(28),
-                child: Text(
-                    'No sample listings match. Try another search or category.')),
+            EmptyState(
+                icon: Icons.search_off_rounded,
+                text: 'No listings match your search and category.',
+                actionLabel: 'Show all products',
+                onAction: onReset),
           for (final p in results) ProductCard(p),
         ]);
   }
