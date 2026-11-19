@@ -25,8 +25,15 @@ class _SupplierShellState extends State<SupplierShell> {
       const MessagesTab()
     ];
     return Scaffold(
-      appBar: supplierAppBar(context,
-          '${const ['Dashboard', 'Listings', 'RFQs', 'Orders', 'Messages'][_tab]} · ${store.myBusiness.name}'),
+      appBar: supplierAppBar(
+          context,
+          '${const [
+            'Dashboard',
+            'Listings',
+            'RFQs',
+            'Orders',
+            'Messages'
+          ][_tab]} · ${store.myBusiness.name}'),
       body: SafeArea(
           child: Center(
               child: ConstrainedBox(
