@@ -27,12 +27,13 @@ class CustomerModules {
   }
 
   Future<void> blockThread(String thread, bool blocked) async {
-    await api.rpc('set_thread_block',
-        {'p_thread': thread, 'p_blocked': blocked});
+    await api
+        .rpc('set_thread_block', {'p_thread': thread, 'p_blocked': blocked});
   }
 
-  Future<String> createCase(String organization, String subject,
-      String description, {String? thread}) async {
+  Future<String> createCase(
+      String organization, String subject, String description,
+      {String? thread}) async {
     final id = await api.rpc('create_support_case', {
       'p_org': organization,
       'p_subject': subject,
