@@ -61,8 +61,15 @@ class _BuyerShellState extends State<BuyerShell> {
       const MessagesTab(),
     ];
     return Scaffold(
-      appBar: _appBar(context,
-          '${const ['Home', 'Discover', 'RFQs', 'Orders', 'Messages'][_tab]} · ${store.myBusiness.name}'),
+      appBar: _appBar(
+          context,
+          '${const [
+            'Home',
+            'Discover',
+            'RFQs',
+            'Orders',
+            'Messages'
+          ][_tab]} · ${store.myBusiness.name}'),
       body: SafeArea(
           child: Center(
               child: ConstrainedBox(
