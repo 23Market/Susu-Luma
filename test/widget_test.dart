@@ -84,7 +84,8 @@ void main() {
   });
 
   group('app flows', () {
-    testWidgets('chat retains an unsent draft and allows retry', (tester) async {
+    testWidgets('chat retains an unsent draft and allows retry',
+        (tester) async {
       tester.view.physicalSize = const Size(800, 1800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -106,7 +107,6 @@ void main() {
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
           isEmpty);
     });
-
 
     testWidgets('search reset clears both the query and category',
         (tester) async {
