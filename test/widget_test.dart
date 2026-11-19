@@ -5,6 +5,15 @@ import 'package:susu_luma/models.dart';
 import 'package:susu_luma/main.dart';
 import 'package:susu_luma/store.dart';
 
+class FailingSendStore extends AppStore {
+  bool fail = true;
+  @override
+  Future<void> send(Thread t, String text) async {
+    if (fail) throw StateError('offline');
+    await super.send(t, text);
+  }
+}
+
 Future<AppStore> _boot(WidgetTester tester, Role role) async {
   tester.view.physicalSize = const Size(800, 1800);
   tester.view.devicePixelRatio = 1;
@@ -75,6 +84,30 @@ void main() {
   });
 
   group('app flows', () {
+    testWidgets('chat retains an unsent draft and allows retry', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final store = FailingSendStore()..signIn(Role.buyer);
+      await tester.pumpWidget(SusuLumaApp(store: store));
+      await tester.tap(find.text('Messages').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Freetown Building Supply'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Keep this draft');
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          'Keep this draft');
+      store.fail = false;
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pumpAndSettle();
+      expect(store.threads.first.messages.last.text, 'Keep this draft');
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          isEmpty);
+    });
+
+
     testWidgets('search reset clears both the query and category',
         (tester) async {
       await _boot(tester, Role.buyer);
