@@ -54,8 +54,12 @@ class Product {
       required this.icon,
       required this.color,
       this.indicativePrice,
+      this.photo,
       this.published = true});
   final String id, name, category, supplierId, location, unit;
+
+  /// Bundled sample photo (asset path), if any. See lib/credits.dart for attribution.
+  final String? photo;
   final IconData icon;
   final Color color;
   final double? indicativePrice; // SLE, indicative only; null = quote only

@@ -148,6 +148,36 @@ class EmptyState extends StatelessWidget {
       );
 }
 
+/// A product photo (or the category icon when the product has none), cropped to fill its box.
+class ProductPhoto extends StatelessWidget {
+  const ProductPhoto(this.product,
+      {super.key,
+      this.width,
+      required this.height,
+      this.radius = 13,
+      this.iconSize = 32});
+  final Product product;
+  final double? width, height;
+  final double radius, iconSize;
+  @override
+  Widget build(BuildContext context) {
+    final p = product;
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Container(
+            width: width,
+            height: height,
+            color: p.color,
+            child: p.photo == null
+                ? Icon(p.icon, color: green, size: iconSize)
+                : Image.asset(p.photo!,
+                    fit: BoxFit.cover,
+                    semanticLabel: p.name,
+                    errorBuilder: (_, __, ___) =>
+                        Icon(p.icon, color: green, size: iconSize))));
+  }
+}
+
 class Disclaimer extends StatelessWidget {
   const Disclaimer(this.text, {super.key});
   final String text;

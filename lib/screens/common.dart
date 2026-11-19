@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
+import '../credits.dart';
 import '../models.dart';
 import '../store.dart';
 import '../ui.dart';
@@ -617,6 +618,14 @@ class ProfileScreen extends StatelessWidget {
               Text('Help & support',
                   style: TextStyle(fontWeight: FontWeight.w700))
             ])),
+        AppCard(
+            onTap: () => showPhotoCredits(context),
+            child: const Row(children: [
+              Icon(Icons.photo_library_outlined, color: green),
+              SizedBox(width: 12),
+              Text('Photo credits',
+                  style: TextStyle(fontWeight: FontWeight.w700))
+            ])),
         const SizedBox(height: 8),
         OutlinedButton.icon(
             onPressed: () {
@@ -633,3 +642,26 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
+
+void showPhotoCredits(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (c) => AlertDialog(
+            title: const Text('Photo credits'),
+            content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(shrinkWrap: true, children: [
+                  const Text(
+                      'Sample product photos from Wikimedia Commons, used under the licences shown. They illustrate demo listings only.',
+                      style: TextStyle(fontSize: 12, color: muted)),
+                  const SizedBox(height: 10),
+                  for (final p in photoCredits)
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(
+                            '${p.subject}: "${p.title}" by ${p.author}, ${p.license}.',
+                            style: const TextStyle(fontSize: 12.5)))
+                ])),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c), child: const Text('Close'))
+            ]));

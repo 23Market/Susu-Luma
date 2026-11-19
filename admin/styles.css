@@ -349,3 +349,8 @@ input[type=file]{width:100%;font:inherit;font-size:12.5px;color:var(--fg);backgr
 .gatebox .btn{margin-top:6px}.gatebox .gmsg{color:var(--crit);font-size:12.5px;min-height:1em;margin:8px 0 0}
 .gatebox img{display:block;margin:8px auto;background:#fff;padding:6px;border-radius:8px}
 .env-pill.live{color:var(--good);background:var(--good-weak);border-color:color-mix(in srgb,var(--good) 30%,transparent)}.env-pill.live::before{background:var(--good)}
+
+/* ---- sample photos ---- */
+.lrow{display:flex;gap:10px;align-items:center;min-width:0}
+.lthumb{width:48px;height:36px;object-fit:cover;border-radius:6px;flex:none;background:var(--surface-3)}
+.dphoto{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r);background:var(--surface-3);display:block}

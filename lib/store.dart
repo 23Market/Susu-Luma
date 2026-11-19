@@ -300,6 +300,7 @@ class AppStore extends ChangeNotifier {
     products.addAll([
       Product(
           id: 'p1',
+          photo: 'assets/images/products/cement.jpg',
           name: 'Portland Cement 50 kg',
           category: 'Construction',
           supplierId: 's1',
@@ -309,6 +310,7 @@ class AppStore extends ChangeNotifier {
           color: const Color(0xFFE6EDE6)),
       Product(
           id: 'p2',
+          photo: 'assets/images/products/cocoa.jpg',
           name: 'Fresh Cocoa Beans',
           category: 'Agriculture',
           supplierId: 's2',
@@ -318,6 +320,7 @@ class AppStore extends ChangeNotifier {
           color: const Color(0xFFF0E7D8)),
       Product(
           id: 'p3',
+          photo: 'assets/images/products/rebar.jpg',
           name: 'Iron Rods 12 mm',
           category: 'Metals & Hardware',
           supplierId: 's3',
@@ -328,6 +331,7 @@ class AppStore extends ChangeNotifier {
           indicativePrice: 185),
       Product(
           id: 'p4',
+          photo: 'assets/images/products/cassava.jpg',
           name: 'Cassava Flour 25 kg',
           category: 'Agriculture',
           supplierId: 's4',
@@ -338,6 +342,7 @@ class AppStore extends ChangeNotifier {
           indicativePrice: 420),
       Product(
           id: 'p5',
+          photo: 'assets/images/products/sand.jpg',
           name: 'Sand (tipper load)',
           category: 'Construction',
           supplierId: 's1',
@@ -347,6 +352,7 @@ class AppStore extends ChangeNotifier {
           color: const Color(0xFFEFE9DA)),
       Product(
           id: 'p6',
+          photo: 'assets/images/products/generator.jpg',
           name: 'Generator 20 kVA (hire)',
           category: 'Equipment & Machinery',
           supplierId: 's3',
