@@ -1,0 +1,51 @@
+name: Deploy demos to GitHub Pages
+
+# Publishes the Flutter web app (/app/) and the admin console (/admin/) on sample data.
+# One-time setup: repository Settings → Pages → Source: "GitHub Actions".
+# Pages on a private repository needs a paid GitHub plan; the demos contain no secrets (admin/config.js is blank).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build the app in demo mode (no Supabase keys)
+        run: flutter build web --release --no-web-resources-cdn --pwa-strategy=none --base-href "/${{ github.event.repository.name }}/app/"
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/app _site/admin
+          cp site/index.html _site/index.html
+          cp -r build/web/. _site/app/
+          cp -r admin/. _site/admin/
+          : > _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

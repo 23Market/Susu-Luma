@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Susu Luma demos</title>
+<link rel="icon" href="app/favicon.png">
+<style>
+:root{--bg:#f5f7f4;--card:#fff;--ink:#17251f;--mut:#68766f;--line:#dfe6e1;--accent:#176b50}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1613;--card:#17211c;--ink:#e6efe9;--mut:#93a39a;--line:#26332c;--accent:#4fb68f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:32px max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))}
+main{max-width:640px;margin:0 auto}
+h1{font-size:28px;margin:0 0 4px;letter-spacing:-.02em}
+p{color:var(--mut);margin:0 0 20px}
+a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:12px;text-decoration:none;color:inherit}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
+a.card b{display:block;font-size:18px;color:var(--accent)}
+small{display:block;color:var(--mut);margin-top:24px;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+<h1>Susu Luma</h1>
+<p>Sierra Leone B2B marketplace — prototype demos on generated sample data. No real businesses, payments or backend.</p>
+<a class="card" href="app/"><b>Mobile app</b>Buyer and supplier personas: browse, request quotes, accept, track delivery. Best on a phone or a narrow window.</a>
+<a class="card" href="admin/"><b>Admin console</b>24 role-gated modules; switch roles in the sidebar to see permissions enforced.</a>
+<small>Demo data only. Susu Luma is a marketplace and does not sell the listed products; no escrow, wallet or payment services are provided.</small>
+</main>
+</body>
+</html>
