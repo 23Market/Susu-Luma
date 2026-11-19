@@ -471,8 +471,7 @@ void main() {
       await store.toggleSaved('lst-1');
       expect(store.saved, contains('lst-1'));
       expect(api.calls.last.fn, 'set_saved_product');
-      expect(api.calls.last.params,
-          {'p_listing': 'lst-1', 'p_saved': true});
+      expect(api.calls.last.params, {'p_listing': 'lst-1', 'p_saved': true});
     });
   });
 
