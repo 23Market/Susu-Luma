@@ -20,7 +20,10 @@ jobs:
           cache: true
       - run: flutter --version
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test
+      - name: Check Dart formatting with actionable diff
+        run: |
+          dart format lib test
+          git diff --exit-code -- lib test
       - run: flutter analyze
       - run: flutter test
       - name: Verify demo web build
