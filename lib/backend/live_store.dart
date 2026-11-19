@@ -313,9 +313,11 @@ class LiveAppStore extends AppStore {
 
   @override
   Future<void> toggleSaved(String productId) async {
+    final actor = api.userId;
     final next = !saved.contains(productId);
     await api.rpc('set_saved_product',
         {'p_listing': productId, 'p_saved': next});
+    if (actor != api.userId || phase != AuthPhase.ready) return;
     if (next) {
       saved.add(productId);
     } else {
