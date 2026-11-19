@@ -478,7 +478,7 @@ void main() {
       await tester.enterText(find.byType(TextFormField).last, 'password123');
       await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Buyer · Aberdeen Construction'.toUpperCase()),
+      expect(find.textContaining('Home · Aberdeen Construction'.toUpperCase()),
           findsOneWidget);
       expect(find.text('Portland cement 50 kg'), findsWidgets);
     });
