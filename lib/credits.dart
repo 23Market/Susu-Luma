@@ -7,6 +7,11 @@ class PhotoCredit {
       required this.license,
       required this.url});
   final String subject, title, author, license, url;
+
+  /// Link to the licence text where the photo is not public domain.
+  String? get licenseUrl => license.startsWith('CC BY-SA 4.0')
+      ? 'https://creativecommons.org/licenses/by-sa/4.0/'
+      : null;
 }
 
 const photoCredits = <PhotoCredit>[
