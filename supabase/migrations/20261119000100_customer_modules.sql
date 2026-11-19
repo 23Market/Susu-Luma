@@ -2,24 +2,6 @@
 create function public.discover_listings(p_query text default '', p_category text default null,
   p_district text default null, p_availability text default null, p_after uuid default null,
   p_limit integer default 20) returns setof public.listings
-language sql stable security invoker set search_path = '' as $$
-  select l.* from public.listings l
-  join public.organizations o on o.id = l.organization_id
-  join public.categories c on c.id = l.category
-  where l.status = 'published' and o.status = 'active' and c.is_active
-    and (coalesce(trim(p_query),'') = '' or
-      strpos(lower(l.title || ' ' || l.description || ' ' || o.display_name),lower(trim(p_query))) > 0)
-    and (p_category is null or l.category = p_category)
-    and (p_district is null or l.district = p_district)
-    and (p_availability is null or l.availability = p_availability)
-    and (p_after is null or l.id > p_after)
-  order by l.id limit greatest(1,least(coalesce(p_limit,20),100))
-$$;
--- Use existing security-definer supplier directory to avoid private organization
--- RLS hiding published listings from unrelated buyers.
-create or replace function public.discover_listings(p_query text default '', p_category text default null,
-  p_district text default null, p_availability text default null, p_after uuid default null,
-  p_limit integer default 20) returns setof public.listings
 language sql stable security definer set search_path = '' as $$
   select l.* from public.listings l
   join public.organizations o on o.id = l.organization_id
@@ -63,6 +45,8 @@ begin
     delete from public.saved_products where user_id=auth.uid() and listing_id=p_listing;
   end if;
 end $$;
+
+create index messages_sender_recent_idx on public.messages(sender_user_id,created_at);
 
 create table public.thread_blocks (
   thread_id uuid not null references public.threads(id) on delete cascade,
