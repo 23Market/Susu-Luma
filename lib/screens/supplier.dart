@@ -25,8 +25,13 @@ class _SupplierShellState extends State<SupplierShell> {
       const MessagesTab()
     ];
     return Scaffold(
-      appBar: supplierAppBar(context, 'Supplier · ${store.myBusiness.name}'),
-      body: SafeArea(child: IndexedStack(index: _tab, children: pages)),
+      appBar: supplierAppBar(context,
+          '${const ['Dashboard', 'Listings', 'RFQs', 'Orders', 'Messages'][_tab]} · ${store.myBusiness.name}'),
+      body: SafeArea(
+          child: Center(
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: IndexedStack(index: _tab, children: pages)))),
       bottomNavigationBar: NavigationBar(
           selectedIndex: _tab,
           onDestinationSelected: (i) => setState(() => _tab = i),
