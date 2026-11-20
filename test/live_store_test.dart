@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +7,7 @@ import 'package:susu_luma/backend/errors.dart';
 import 'package:susu_luma/backend/live_store.dart';
 import 'package:susu_luma/backend/mappers.dart';
 import 'package:susu_luma/backend/remote_api.dart';
+import 'package:susu_luma/chat_media.dart';
 import 'package:susu_luma/main.dart';
 import 'package:susu_luma/models.dart';
 import 'package:susu_luma/store.dart';
@@ -83,6 +86,26 @@ class FakeApi implements RemoteApi {
     };
     tables['listings'] = [...(tables['listings'] as List? ?? []), saved];
     return saved;
+  }
+
+  final uploads = <({String bucket, String path, int size, String type})>[];
+  Object? uploadError;
+
+  @override
+  Future<void> uploadObject(
+      String bucket, String path, Uint8List bytes, String contentType) async {
+    if (uploadError != null) throw uploadError!;
+    uploads.add(
+        (bucket: bucket, path: path, size: bytes.length, type: contentType));
+  }
+
+  int signedCalls = 0;
+
+  @override
+  Future<String> signedUrl(String bucket, String path,
+      {int seconds = 3600}) async {
+    signedCalls++;
+    return 'https://files.example/$bucket/$path?token=$signedCalls';
   }
 
   @override
@@ -444,6 +467,103 @@ void main() {
       s.signOut();
       expect(s.phase, AuthPhase.signedOut);
       expect(s.rfqs, isEmpty);
+    });
+  });
+
+  group('LiveAppStore chat media', () {
+    Attachment photo() => Attachment(
+        kind: AttachmentKind.image,
+        mime: 'image/jpeg',
+        sizeBytes: 1000,
+        bytes: Uint8List(1000));
+
+    test(
+        'uploads to the private bucket under the thread, then adds the message',
+        () async {
+      final api = _buyerApi();
+      final s = LiveAppStore(api);
+      await s.signInWithPassword('a@b.co', 'password123');
+      await s.sendAttachment(s.threads.first, photo(), caption: ' Site photo ');
+      final up = api.uploads.single;
+      expect(up.bucket, 'chat-media');
+      expect(up.type, 'image/jpeg');
+      expect(up.size, 1000);
+      expect(
+          RegExp(r'^thr-1/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-'
+                  r'[0-9a-f]{12}\.jpg$')
+              .hasMatch(up.path),
+          isTrue,
+          reason: up.path);
+      final call = api.calls.singleWhere((c) => c.fn == 'send_media_message');
+      expect(call.params, {
+        'p_thread': 'thr-1',
+        'p_kind': 'image',
+        'p_path': up.path,
+        'p_mime': 'image/jpeg',
+        'p_bytes': 1000,
+        'p_seconds': null,
+        'p_caption': 'Site photo',
+      });
+    });
+
+    test('a voice note sends its duration', () async {
+      final api = _buyerApi();
+      final s = LiveAppStore(api);
+      await s.signInWithPassword('a@b.co', 'password123');
+      await s.sendAttachment(
+          s.threads.first,
+          Attachment(
+              kind: AttachmentKind.voice,
+              mime: 'audio/mp4',
+              sizeBytes: 4800,
+              seconds: 12,
+              bytes: Uint8List(4800)));
+      final call = api.calls.singleWhere((c) => c.fn == 'send_media_message');
+      expect(call.params['p_kind'], 'voice');
+      expect(call.params['p_seconds'], 12);
+      expect(api.uploads.single.path, endsWith('.m4a'));
+    });
+
+    test('an invalid file never reaches storage or the server', () async {
+      final api = _buyerApi();
+      final s = LiveAppStore(api);
+      await s.signInWithPassword('a@b.co', 'password123');
+      final big = Attachment(
+          kind: AttachmentKind.image,
+          mime: 'image/jpeg',
+          sizeBytes: maxImageBytes + 1,
+          bytes: Uint8List(10));
+      await expectLater(s.sendAttachment(s.threads.first, big),
+          throwsA(isA<MediaException>()));
+      expect(api.uploads, isEmpty);
+      expect(api.calls.where((c) => c.fn == 'send_media_message'), isEmpty);
+    });
+
+    test('a failed upload creates no message', () async {
+      final api = _buyerApi()..uploadError = Exception('SocketException');
+      final s = LiveAppStore(api);
+      await s.signInWithPassword('a@b.co', 'password123');
+      await expectLater(
+          s.sendAttachment(s.threads.first, photo()), throwsException);
+      expect(api.calls.where((c) => c.fn == 'send_media_message'), isEmpty);
+    });
+
+    test('read links are cached for 45 minutes, then renewed', () async {
+      final api = _buyerApi();
+      var now = DateTime.utc(2026, 11, 20, 9);
+      final s = LiveAppStore(api, clock: () => now);
+      await s.signInWithPassword('a@b.co', 'password123');
+      const a = Attachment(
+          kind: AttachmentKind.image,
+          mime: 'image/jpeg',
+          sizeBytes: 10,
+          path: 'thr-1/x.jpg');
+      final first = await s.mediaUrl(a);
+      expect(await s.mediaUrl(a), first);
+      expect(api.signedCalls, 1);
+      now = now.add(const Duration(minutes: 46));
+      expect(await s.mediaUrl(a), isNot(first));
+      expect(api.signedCalls, 2);
     });
   });
 

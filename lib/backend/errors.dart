@@ -1,5 +1,8 @@
+import '../chat_media.dart';
+
 /// Turns server error codes (raised by the SQL functions) into messages a business user can act on.
 String friendlyError(Object e) {
+  if (e is MediaException) return e.message;
   final raw = e.toString();
   const map = {
     'not_authenticated': 'Please sign in again.',
@@ -23,6 +26,10 @@ String friendlyError(Object e) {
     'validity_in_past': 'The quote validity date must be in the future.',
     'multi_item_unsupported':
         'This request has several items. Multi-item quotes are not supported in the app yet.',
+    'media_invalid':
+        'That file cannot be sent. Photos can be up to 5 MB and voice notes up to 60 seconds.',
+    'media_not_uploaded':
+        'The file did not finish uploading. Please try again.',
     'Invalid login credentials': 'Email or password is incorrect.',
     'User already registered': 'An account with this email already exists.',
   };

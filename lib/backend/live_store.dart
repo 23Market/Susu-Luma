@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../chat_media.dart';
 import '../models.dart';
 import '../store.dart';
 import 'mappers.dart';
@@ -81,6 +82,7 @@ class LiveAppStore extends AppStore {
     ]) {
       l.clear();
     }
+    _urls.clear();
     notifyListeners();
   }
 
@@ -313,5 +315,47 @@ class LiveAppStore extends AppStore {
     if (clean.isEmpty) return;
     await api.rpc('send_message', {'p_thread': t.id, 'p_body': clean});
     await refresh();
+  }
+
+  /// Uploads the file to the private chat-media bucket, then asks the server to add the message.
+  /// The server re-checks membership, type, size, duration and that the file really exists.
+  @override
+  Future<void> sendAttachment(Thread t, Attachment a,
+      {String caption = ''}) async {
+    final problem = validateAttachment(a);
+    if (problem != null) throw MediaException(problem);
+    final bytes = a.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      throw MediaException('Nothing to send.');
+    }
+    final path = newObjectPath(t.id, a);
+    await api.uploadObject('chat-media', path, bytes, a.mime);
+    await api.rpc('send_media_message', {
+      'p_thread': t.id,
+      'p_kind': a.kind.name,
+      'p_path': path,
+      'p_mime': a.mime,
+      'p_bytes': bytes.length,
+      'p_seconds': a.seconds,
+      'p_caption': caption.trim(),
+    });
+    await refresh();
+  }
+
+  // Signed links expire after an hour; reuse one for 45 minutes, then ask again.
+  final _urls = <String, ({DateTime at, Future<String> url})>{};
+
+  @override
+  Future<String> mediaUrl(Attachment a) {
+    final path = a.path;
+    if (path == null) throw MediaException('This file is not available.');
+    final hit = _urls[path];
+    if (hit != null && now().difference(hit.at) < const Duration(minutes: 45)) {
+      return hit.url;
+    }
+    final fresh = api.signedUrl('chat-media', path);
+    _urls[path] = (at: now(), url: fresh);
+    unawaited(fresh.then((_) {}, onError: (Object _) => _urls.remove(path)));
+    return fresh;
   }
 }

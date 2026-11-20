@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models.dart';
 import '../store.dart';
 import '../ui.dart';
+import '../chat_media.dart';
+import 'chat_media_widgets.dart';
 
 // ---------- RFQ list + detail ----------
 class RfqsTab extends StatelessWidget {
@@ -487,7 +489,7 @@ class MessagesTab extends StatelessWidget {
                   Text(t.title,
                       style: const TextStyle(fontSize: 12, color: green)),
                   if (t.messages.isNotEmpty)
-                    Text(t.messages.last.text,
+                    Text(t.messages.last.preview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: muted, fontSize: 12)),
@@ -535,28 +537,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   decoration: BoxDecoration(
                       color: m.from == store.role ? green : Colors.white,
                       borderRadius: BorderRadius.circular(16)),
-                  child: Text(m.text,
-                      style: TextStyle(
-                          color: m.from == store.role ? Colors.white : ink))),
+                  child: MessageBody(message: m, mine: m.from == store.role)),
             ),
         ])),
-        SafeArea(
-            child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                child: Row(children: [
-                  Expanded(
-                      child: TextField(
-                          controller: _c,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _send(store),
-                          decoration: const InputDecoration(
-                              hintText: 'Write a message'))),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                      tooltip: 'Send',
-                      onPressed: () => _send(store),
-                      icon: const Icon(Icons.send_rounded)),
-                ]))),
+        ChatComposer(
+            controller: _c,
+            onSendText: () => _send(store),
+            onAttachment: (a) => _sendAttachment(store, a)),
       ]),
     );
   }
@@ -565,6 +552,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _c.text;
     _c.clear();
     await guarded(context, () => store.send(widget.thread, text));
+  }
+
+  Future<void> _sendAttachment(AppStore store, Attachment a) async {
+    await guarded(context, () => store.sendAttachment(widget.thread, a));
   }
 }
 
