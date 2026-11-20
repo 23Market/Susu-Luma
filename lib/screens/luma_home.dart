@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models.dart';
 import '../ui.dart';
+import 'buyer.dart' show ProductCard;
 
 const _sun = Color(0xFFFFD54F);
 
@@ -229,6 +230,16 @@ class _LumaHomeState extends State<LumaHome> {
                   onTap: () => notice(context,
                       'Listing products needs a supplier business account.'))),
         ]),
+        const SizedBox(height: 22),
+        const Row(children: [
+          Expanded(
+              child: Text('Featured sourcing',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 18, color: ink))),
+          Text('Sample listings', style: TextStyle(color: muted, fontSize: 11)),
+        ]),
+        const SizedBox(height: 12),
+        for (final p in store.published.take(3)) ProductCard(p),
         const Disclaimer(
             'Prototype notice: listings and supplier details are illustrative sample data, not live offers.'),
       ],
