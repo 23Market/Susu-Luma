@@ -1,14 +1,14 @@
 # Susu Luma waterfall gate register
 
-**Current decision:** G0/G1/G2 evidence is incomplete. Build work is a prototype and draft foundation only. No production release or live backend activation is authorised by this document.
+**Current decision:** G1 is approved by the accountable owner as a single-signer approval with recorded risk acceptances (`G1_APPROVAL_RECORD.md`). G0 and G2 evidence remains incomplete. Build work is a prototype and draft foundation only. No production release or live backend activation is authorised by this document, and independent review is required before G4.
 
 The PRD v1.0 is marked **Draft for stakeholder review**. No gate may be treated as passed without recorded approval and evidence.
 
 | Gate | Exit evidence required | Current status | Owner / decision needed |
 |---|---|---|---|
 | G0 — Initiation and feasibility | Named sponsor and Product Owner; pilot hypothesis; feasibility, budget, risks, legal/compliance dependencies | **Open** | Sponsor to name accountable owners and confirm funding/pilot |
-| G1 — Requirements baseline | PRD reviewed; requirements, acceptance criteria, KPIs, exclusions and assumptions signed; unresolved TBDs risk-accepted or resolved | **Open** | Sponsor, Product Owner, Operations, Engineering/Security, Finance/Legal, pilot buyer/supplier |
-| G2 — UX, architecture and security design | Approved journeys, role/permission matrix, threat model, data classification/retention, architecture, admin-console design, test strategy | **In progress / not approved** | Product, UX, Engineering, Security, Operations and Legal |
+| G1 — Requirements baseline | PRD reviewed; requirements, acceptance criteria, KPIs, exclusions and assumptions signed; unresolved TBDs risk-accepted or resolved | **Approved by owner 18 Nov 2026 — single-signer, risks accepted** ([record](G1_APPROVAL_RECORD.md)) | Signed by Joseph Momoh in all capacities. Pilot buyer/supplier representatives VACANT (required at G5). Independent reviewer required before G4 |
+| G2 — UX, architecture and security design | Approved journeys, role/permission matrix, threat model, data classification/retention, architecture, admin-console design, test strategy | **In progress / not approved** — 4 of 7 artifacts do not exist ([index](G2_DESIGN_PACK_INDEX.md)) | Product, UX, Engineering, Security, Operations and Legal |
 | G3 — Build and component verification | Feature implementation mapped to approved requirements; code review; static analysis; unit/widget/component tests; dependency and secret scans | **Not evidenced** | Engineering lead; CI results must be linked |
 | G4 — Integration and system tests | Staging integrations; RLS and cross-tenant tests; quote/order invariants; failure/retry tests; audit checks; backup restore and measured RPO/RTO | **Not evidenced** | QA and Engineering/Security |
 | G5 — UAT, security and operational readiness | Buyer/supplier/admin UAT sign-off; accessibility/usability evidence; incident/support runbooks; privacy/retention; legal and operational approvals | **Not evidenced** | Product Owner, Operations, Security, Legal/Finance and pilot users |
