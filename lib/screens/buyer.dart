@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models.dart';
 import '../ui.dart';
 import 'common.dart';
+import 'luma_home.dart';
 
 const categories = [
   'All',
@@ -48,7 +49,7 @@ class _BuyerShellState extends State<BuyerShell> {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final pages = <Widget>[
-      _Home(onTab: _go),
+      LumaHome(onTab: _go),
       _Discover(
           controller: _search,
           onReset: _resetSearch,
@@ -136,128 +137,6 @@ PreferredSizeWidget _appBar(BuildContext context, String subtitle) => AppBar(
 
 PreferredSizeWidget supplierAppBar(BuildContext context, String subtitle) =>
     _appBar(context, subtitle);
-
-class _Home extends StatelessWidget {
-  const _Home({required this.onTab});
-  final void Function(int, {String? category}) onTab;
-  @override
-  Widget build(BuildContext context) {
-    final store = StoreScope.of(context);
-    final quoted =
-        store.myRfqs.where((r) => r.status == RfqStatus.quoted).length;
-    return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: const LinearGradient(
-                    colors: [green, Color(0xFF0D503B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight)),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Business starts with a better connection.',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 26,
-                      height: 1.12,
-                      letterSpacing: -.7)),
-              const SizedBox(height: 10),
-              const Text(
-                  'Discover suppliers and source products across Sierra Leone.',
-                  style: TextStyle(color: Color(0xFFE2F0E9), height: 1.4)),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                  onPressed: () => onTab(1),
-                  style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white, foregroundColor: green),
-                  icon: const Icon(Icons.search_rounded),
-                  label: const Text('Find products')),
-            ]),
-          ),
-          if (quoted > 0)
-            AppCard(
-                margin: const EdgeInsets.only(top: 16),
-                onTap: () => onTab(2),
-                child: Row(children: [
-                  const Icon(Icons.notifications_active_outlined, color: green),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: Text(
-                          '$quoted RFQ${quoted == 1 ? ' has' : 's have'} quotes waiting for your decision',
-                          style: const TextStyle(fontWeight: FontWeight.w700))),
-                  const Icon(Icons.chevron_right_rounded, color: muted)
-                ])),
-          const SizedBox(height: 22),
-          const Text('Browse categories',
-              style: TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 18, color: ink)),
-          const SizedBox(height: 10),
-          SizedBox(
-              height: 116,
-              child: ListView(scrollDirection: Axis.horizontal, children: [
-                for (final c in categories.skip(1))
-                  _Cat(c, onTap: () => onTab(1, category: c)),
-              ])),
-          const SizedBox(height: 20),
-          const Row(children: [
-            Expanded(
-                child: Text('Featured sourcing',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        color: ink))),
-            Text('Sample listings',
-                style: TextStyle(color: muted, fontSize: 11))
-          ]),
-          const SizedBox(height: 12),
-          for (final p in store.published.take(3)) ProductCard(p),
-          const Disclaimer(
-              'Prototype notice: listings and supplier details are illustrative sample data, not live offers.'),
-        ]);
-  }
-}
-
-class _Cat extends StatelessWidget {
-  const _Cat(this.title, {required this.onTap});
-  final String title;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(right: 10),
-        child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-                width: 144,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: line)),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                              color: const Color(0xFFE5EEE6),
-                              borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.category_outlined,
-                              color: green, size: 19)),
-                      Text(title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w700)),
-                    ]))),
-      );
-}
 
 class _Discover extends StatelessWidget {
   const _Discover(
