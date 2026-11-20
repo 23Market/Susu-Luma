@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
+import 'chat_media.dart';
 
 enum Role { buyer, supplier }
 
@@ -155,10 +156,16 @@ class Order {
 }
 
 class ChatMessage {
-  const ChatMessage(this.from, this.text, this.at);
+  const ChatMessage(this.from, this.text, this.at, {this.attachment});
   final Role from;
   final String text;
   final DateTime at;
+
+  /// A photo or voice note. The text is then an optional caption.
+  final Attachment? attachment;
+
+  /// One line for conversation lists.
+  String get preview => text.isNotEmpty ? text : (attachment?.label ?? '');
 }
 
 class Thread {

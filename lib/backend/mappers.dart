@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
+import '../chat_media.dart';
 import '../models.dart';
 
 /// Pure functions from database rows (PostgREST JSON) to the app's models. No I/O, fully unit-tested.
@@ -176,6 +177,19 @@ Thread mapThread(Row t, {required Map<String, String> orgNames}) {
                   ? Role.buyer
                   : Role.supplier,
               '${m['body']}',
-              ts(m['created_at'])))
+              ts(m['created_at']),
+              attachment: mapAttachment(m)))
           .toList());
+}
+
+/// Photo or voice-note metadata from a message row; the file itself stays in private storage.
+Attachment? mapAttachment(Row m) {
+  final kind = m['attachment_kind'];
+  if (kind == null) return null;
+  return Attachment(
+      kind: kind == 'voice' ? AttachmentKind.voice : AttachmentKind.image,
+      mime: '${m['attachment_mime']}',
+      sizeBytes: (m['attachment_bytes'] as num?)?.toInt() ?? 0,
+      seconds: (m['attachment_seconds'] as num?)?.toInt(),
+      path: '${m['attachment_path']}');
 }

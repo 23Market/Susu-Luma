@@ -4,6 +4,8 @@ import 'backend/config.dart';
 import 'backend/live_store.dart';
 import 'backend/remote_api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
+import 'chat_media.dart';
+import 'chat_media_device.dart';
 import 'models.dart';
 import 'screens/auth.dart';
 import 'screens/buyer.dart';
@@ -31,13 +33,19 @@ Future<void> main() async {
 }
 
 class SusuLumaApp extends StatelessWidget {
-  const SusuLumaApp({super.key, required this.store});
+  const SusuLumaApp({super.key, required this.store, this.media});
   final AppStore store;
+
+  /// Camera, gallery, microphone and speaker. Tests pass a fake; the app uses the device.
+  final MediaService? media;
+  static final MediaService _device = DeviceMediaService();
 
   @override
   Widget build(BuildContext context) => StoreScope(
         store: store,
-        child: MaterialApp(
+        child: MediaScope(
+          service: media ?? _device,
+          child: MaterialApp(
           title: 'Susu Luma',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
@@ -59,6 +67,7 @@ class SusuLumaApp extends StatelessWidget {
             ),
           ),
           home: const _Root(),
+        ),
         ),
       );
 }
