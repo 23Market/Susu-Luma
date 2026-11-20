@@ -1,0 +1,41 @@
+# Builds an installable Android APK on demand. Not run on every pull request (saves Actions minutes).
+#   - Manual: Actions > "Android APK" > Run workflow (pick a branch).
+#   - Automatic: only on pushes to branches named work/luma-phone-build-*.
+# The APK is a DEMO build: no backend keys are passed, so it runs on built-in sample data.
+# It is signed with the CI debug key, which is different on every run: Android will not update an
+# older install in place. Uninstall the old app first. Not for the Play Store or for production.
+name: Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/luma-phone-build-*']
+permissions:
+  contents: read
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build demo APK
+        run: flutter build apk --release
+      - name: Checksum
+        run: sha256sum build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: luma-demo-apk-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+          if-no-files-found: error
