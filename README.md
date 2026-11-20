@@ -74,6 +74,17 @@ Files: `index.html` (shell), `styles.css`, `app.js` (core: overview, listings, u
 
 Use **Viewing as role** in the sidebar to switch between Super Admin, Operations Lead, Trust & Safety, Support, Finance and Analyst; the console enforces the matrix in Settings & Permissions (disabled actions, hidden evidence, refused and audited attempts). Everything runs on generated sample data held in memory — reloading resets it. UI visibility is **not** authorisation: a production build must enforce the same rules server-side (the screens document the proposed `/admin/v1` API surface). The listed status labels (Demo / Partial / API pending / Proposed) are deliberately not "production approved".
 
+## Admin web foundation
+
+The separate responsive Admin console is in `admin-web/`. It is a read-only foundation, uses server-provided capabilities, and has no live authentication or Supabase adapter. Unconfigured builds fail closed; the labelled synthetic-data mode is development-only.
+
+1. Install Node.js 22.
+2. From `admin-web/`, run `npm ci`.
+3. Use `npm run dev:mock` to view the clearly labelled synthetic-data shell, or `npm run dev` to exercise the unconfigured fail-closed state.
+4. Run `npm run verify` for typechecking, tests, production build and a mock-data/secret bundle check.
+
+Do not treat this foundation as production-ready. A live adapter, sign-in/MFA enrollment, write actions, hosting headers and independent review remain outstanding.
+
 Before connecting Supabase, create separate dev/staging/prod projects, review the SQL migration with the team, test RLS against buyer/supplier/admin personas, and configure only the publishable client key via environment/build configuration. Never commit credentials.
 
 ## Waterfall gates
