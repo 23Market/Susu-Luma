@@ -1,4 +1,6 @@
 // ignore_for_file: avoid_dynamic_calls
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The only surface the app uses to reach the backend. Authorisation is enforced by Postgres (RLS and
@@ -20,6 +22,13 @@ abstract class RemoteApi {
       int? limit});
   Future<Map<String, dynamic>> insert(String table, Map<String, dynamic> row);
   Future<dynamic> rpc(String fn, Map<String, dynamic> params);
+
+  /// Uploads to a private storage bucket. Never overwrites an existing object.
+  Future<void> uploadObject(
+      String bucket, String path, Uint8List bytes, String contentType);
+
+  /// Short-lived read link for a private object (access is still checked by storage policies).
+  Future<String> signedUrl(String bucket, String path, {int seconds = 3600});
 }
 
 class SupabaseApi implements RemoteApi {
@@ -75,4 +84,15 @@ class SupabaseApi implements RemoteApi {
   @override
   Future<dynamic> rpc(String fn, Map<String, dynamic> params) =>
       _client.rpc(fn, params: params);
+
+  @override
+  Future<void> uploadObject(
+      String bucket, String path, Uint8List bytes, String contentType) async {
+    await _client.storage.from(bucket).uploadBinary(path, bytes,
+        fileOptions: FileOptions(contentType: contentType));
+  }
+
+  @override
+  Future<String> signedUrl(String bucket, String path, {int seconds = 3600}) =>
+      _client.storage.from(bucket).createSignedUrl(path, seconds);
 }

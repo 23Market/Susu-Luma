@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use -- Flutter 3.50 prefers material_ui; keep the SDK-wide import until the project migrates.
 import 'package:flutter/material.dart';
+import 'chat_media.dart';
 import 'models.dart';
 
 const buyerBusiness = Business(
@@ -283,6 +284,20 @@ class AppStore extends ChangeNotifier {
     t.messages.add(ChatMessage(role!, clean, _clock()));
     notifyListeners();
   }
+
+  /// Sends a photo or voice note. Demo mode keeps the file in memory only; nothing is uploaded.
+  Future<void> sendAttachment(Thread t, Attachment a,
+      {String caption = ''}) async {
+    if (role == null) return;
+    final problem = validateAttachment(a);
+    if (problem != null) throw MediaException(problem);
+    t.messages.add(ChatMessage(role!, caption.trim(), _clock(), attachment: a));
+    notifyListeners();
+  }
+
+  /// Short-lived link for a stored attachment. Only live mode has stored attachments.
+  Future<String> mediaUrl(Attachment a) async =>
+      throw MediaException('This file is not available in demo mode.');
 
   static IconData categoryIcon(String c) => switch (c) {
         'Agriculture' => Icons.grass_rounded,
