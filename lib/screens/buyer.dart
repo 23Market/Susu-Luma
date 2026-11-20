@@ -333,12 +333,7 @@ class ProductCard extends StatelessWidget {
           MaterialPageRoute<void>(
               builder: (_) => ProductDetailScreen(product: p))),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-            width: 76,
-            height: 84,
-            decoration: BoxDecoration(
-                color: p.color, borderRadius: BorderRadius.circular(13)),
-            child: Icon(p.icon, color: green, size: 32)),
+        ProductPhoto(p, width: 76, height: 84),
         const SizedBox(width: 12),
         Expanded(
             child:
@@ -404,11 +399,7 @@ class ProductDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Product')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
-        Container(
-            height: 150,
-            decoration: BoxDecoration(
-                color: p.color, borderRadius: BorderRadius.circular(20)),
-            child: Icon(p.icon, color: green, size: 64)),
+        ProductPhoto(p, height: 190, radius: 20, iconSize: 64),
         const SizedBox(height: 16),
         PageTitle(p.name, p.category),
         AppCard(
