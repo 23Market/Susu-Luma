@@ -1,0 +1,52 @@
+name: admin-web
+
+# Separate web Admin console (see docs/ADMIN_WEB_ARCHITECTURE.md). Independent of the Flutter job:
+# a Flutter analyzer failure must not hide a web regression, and vice versa.
+on:
+  pull_request:
+    paths:
+      - 'admin-web/**'
+      - '.github/workflows/admin-web.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'admin-web/**'
+      - '.github/workflows/admin-web.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-web/package-lock.json
+      - name: Install (lockfile only)
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit, component, accessibility and security-guardrail tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Production bundle contains no mock data or secrets
+        run: npm run check:bundle
+      - name: Dependency audit (shipped dependencies, blocking at high)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Dependency audit (build and test tooling, informational)
+        # Tooling advisories are recorded, not silently ignored. They do not ship to users.
+        # A failure here is shown but does not block; the decision is documented in the PR.
+        continue-on-error: true
+        run: npm audit
