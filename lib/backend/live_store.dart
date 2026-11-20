@@ -325,7 +325,9 @@ class LiveAppStore extends AppStore {
     final problem = validateAttachment(a);
     if (problem != null) throw MediaException(problem);
     final bytes = a.bytes;
-    if (bytes == null || bytes.isEmpty) throw MediaException('Nothing to send.');
+    if (bytes == null || bytes.isEmpty) {
+      throw MediaException('Nothing to send.');
+    }
     final path = newObjectPath(t.id, a);
     await api.uploadObject('chat-media', path, bytes, a.mime);
     await api.rpc('send_media_message', {

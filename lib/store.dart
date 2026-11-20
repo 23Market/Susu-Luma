@@ -291,8 +291,7 @@ class AppStore extends ChangeNotifier {
     if (role == null) return;
     final problem = validateAttachment(a);
     if (problem != null) throw MediaException(problem);
-    t.messages
-        .add(ChatMessage(role!, caption.trim(), _clock(), attachment: a));
+    t.messages.add(ChatMessage(role!, caption.trim(), _clock(), attachment: a));
     notifyListeners();
   }
 

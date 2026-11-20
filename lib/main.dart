@@ -46,28 +46,28 @@ class SusuLumaApp extends StatelessWidget {
         child: MediaScope(
           service: media ?? _device,
           child: MaterialApp(
-          title: 'Susu Luma',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            scaffoldBackgroundColor: canvas,
-            colorScheme: ColorScheme.fromSeed(seedColor: green),
-            appBarTheme: const AppBarTheme(
-                backgroundColor: canvas,
-                foregroundColor: ink,
-                scrolledUnderElevation: 0),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            title: 'Susu Luma',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              useMaterial3: true,
+              scaffoldBackgroundColor: canvas,
+              colorScheme: ColorScheme.fromSeed(seedColor: green),
+              appBarTheme: const AppBarTheme(
+                  backgroundColor: canvas,
+                  foregroundColor: ink,
+                  scrolledUnderElevation: 0),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
             ),
+            home: const _Root(),
           ),
-          home: const _Root(),
-        ),
         ),
       );
 }

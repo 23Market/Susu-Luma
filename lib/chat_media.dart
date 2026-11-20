@@ -42,7 +42,7 @@ class Attachment {
   /// Content held in memory: just picked/recorded, or demo mode (nothing is uploaded).
   final Uint8List? bytes;
 
-  /// Private storage path in live mode: '<thread id>/<uuid>.<ext>'.
+  /// Private storage path in live mode: `<thread id>/<uuid>.<ext>`.
   final String? path;
 
   String get label => kind == AttachmentKind.image ? 'Photo' : 'Voice note';
@@ -119,7 +119,7 @@ String _uuid4(Random rng) {
       '${h(8)}${h(9)}-${h(10)}${h(11)}${h(12)}${h(13)}${h(14)}${h(15)}';
 }
 
-/// '<thread id>/<random uuid>.<ext>': the shape the database and storage policies require.
+/// `<thread id>/<random uuid>.<ext>`: the shape the database and storage policies require.
 String newObjectPath(String threadId, Attachment a, {Random? random}) =>
     '$threadId/${_uuid4(random ?? Random.secure())}.${a.extension}';
 

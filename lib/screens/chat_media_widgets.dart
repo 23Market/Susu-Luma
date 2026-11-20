@@ -146,8 +146,7 @@ class _ChatComposerState extends State<ChatComposer> {
         const Icon(Icons.fiber_manual_record, color: Colors.red, size: 16),
         const SizedBox(width: 8),
         Expanded(
-            child: Text(
-                'Recording ${clock(_secs)} / ${clock(maxVoiceSeconds)}',
+            child: Text('Recording ${clock(_secs)} / ${clock(maxVoiceSeconds)}',
                 style: const TextStyle(fontWeight: FontWeight.w700))),
         IconButton.filled(
             tooltip: 'Send voice note',
@@ -165,7 +164,8 @@ class _ChatComposerState extends State<ChatComposer> {
                 controller: widget.controller,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => widget.onSendText(),
-                decoration: const InputDecoration(hintText: 'Write a message'))),
+                decoration:
+                    const InputDecoration(hintText: 'Write a message'))),
         IconButton(
             tooltip: 'Record voice note',
             onPressed: _busy ? null : _startRecording,
@@ -278,9 +278,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     final bytes = _a.bytes;
     if (bytes != null) {
       return photoOf(Image.memory(bytes,
-          width: 220,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => broken));
+          width: 220, fit: BoxFit.cover, errorBuilder: (_, __, ___) => broken));
     }
     return FutureBuilder<String>(
       future: _url,
@@ -307,11 +305,16 @@ class _AttachmentViewState extends State<AttachmentView> {
           tooltip: _playing ? 'Stop voice note' : 'Play voice note',
           onPressed: _togglePlay,
           color: fg,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           icon: Icon(
               _playing ? Icons.stop_circle_outlined : Icons.play_circle_outline,
-              size: 34)),
-      Text('Voice note · ${clock(_a.seconds ?? 0)}',
-          style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+              size: 32)),
+      const SizedBox(width: 6),
+      Flexible(
+          child: Text('Voice note · ${clock(_a.seconds ?? 0)}',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: fg, fontWeight: FontWeight.w600))),
     ]);
   }
 }

@@ -28,7 +28,8 @@ String friendlyError(Object e) {
         'This request has several items. Multi-item quotes are not supported in the app yet.',
     'media_invalid':
         'That file cannot be sent. Photos can be up to 5 MB and voice notes up to 60 seconds.',
-    'media_not_uploaded': 'The file did not finish uploading. Please try again.',
+    'media_not_uploaded':
+        'The file did not finish uploading. Please try again.',
     'Invalid login credentials': 'Email or password is incorrect.',
     'User already registered': 'An account with this email already exists.',
   };

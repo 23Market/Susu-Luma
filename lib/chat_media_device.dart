@@ -52,7 +52,8 @@ class DeviceMediaService implements MediaService {
     String path = '';
     if (!kIsWeb) {
       final dir = await getTemporaryDirectory();
-      path = '${dir.path}/luma_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
+      path =
+          '${dir.path}/luma_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
     }
     // Small mono voice quality: about 4 KB per second on phones.
     const phone = RecordConfig(
@@ -83,7 +84,8 @@ class DeviceMediaService implements MediaService {
     final bytes = await XFile(path).readAsBytes();
     if (!kIsWeb && tempPath != null && tempPath.isNotEmpty) {
       try {
-        await File(tempPath).delete(); // do not leave voice files in the app cache
+        await File(tempPath)
+            .delete(); // do not leave voice files in the app cache
       } on Object {
         // Best effort only.
       }
@@ -102,9 +104,8 @@ class DeviceMediaService implements MediaService {
 
   @override
   Future<void> play(Attachment a, {String? url}) async {
-    final Source source = url != null
-        ? UrlSource(url)
-        : BytesSource(a.bytes!, mimeType: a.mime);
+    final Source source =
+        url != null ? UrlSource(url) : BytesSource(a.bytes!, mimeType: a.mime);
     await _player.stop();
     final done = _player.onPlayerStateChanged.firstWhere(
       (s) => s == PlayerState.completed || s == PlayerState.stopped,

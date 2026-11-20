@@ -95,12 +95,8 @@ class FakeApi implements RemoteApi {
   Future<void> uploadObject(
       String bucket, String path, Uint8List bytes, String contentType) async {
     if (uploadError != null) throw uploadError!;
-    uploads.add((
-      bucket: bucket,
-      path: path,
-      size: bytes.length,
-      type: contentType
-    ));
+    uploads.add(
+        (bucket: bucket, path: path, size: bytes.length, type: contentType));
   }
 
   int signedCalls = 0;
@@ -481,7 +477,8 @@ void main() {
         sizeBytes: 1000,
         bytes: Uint8List(1000));
 
-    test('uploads to the private bucket under the thread, then adds the message',
+    test(
+        'uploads to the private bucket under the thread, then adds the message',
         () async {
       final api = _buyerApi();
       final s = LiveAppStore(api);
@@ -536,8 +533,8 @@ void main() {
           mime: 'image/jpeg',
           sizeBytes: maxImageBytes + 1,
           bytes: Uint8List(10));
-      await expectLater(
-          s.sendAttachment(s.threads.first, big), throwsA(isA<MediaException>()));
+      await expectLater(s.sendAttachment(s.threads.first, big),
+          throwsA(isA<MediaException>()));
       expect(api.uploads, isEmpty);
       expect(api.calls.where((c) => c.fn == 'send_media_message'), isEmpty);
     });

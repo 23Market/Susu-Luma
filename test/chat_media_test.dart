@@ -124,7 +124,8 @@ void main() {
           sniffImageMime(Uint8List.fromList(
               [...'RIFF'.codeUnits, 0, 0, 0, 0, ...'WEBP'.codeUnits])),
           'image/webp');
-      expect(sniffImageMime(Uint8List.fromList('GIF89a....'.codeUnits)), isNull);
+      expect(
+          sniffImageMime(Uint8List.fromList('GIF89a....'.codeUnits)), isNull);
       expect(sniffImageMime(Uint8List(0)), isNull);
     });
 
@@ -172,8 +173,7 @@ void main() {
       expect(ChatMessage(Role.buyer, '', at, attachment: _voice()).preview,
           'Voice note');
       expect(ChatMessage(Role.buyer, 'Hello', at).preview, 'Hello');
-      expect(
-          ChatMessage(Role.buyer, 'Look', at, attachment: _photo()).preview,
+      expect(ChatMessage(Role.buyer, 'Look', at, attachment: _photo()).preview,
           'Look');
     });
 
@@ -345,7 +345,8 @@ void main() {
       expect(find.byTooltip('Record voice note'), findsOneWidget);
     });
 
-    testWidgets('without microphone permission the person is told how to fix it',
+    testWidgets(
+        'without microphone permission the person is told how to fix it',
         (tester) async {
       final media = FakeMedia()..allowMic = false;
       await _openChat(tester, media);
