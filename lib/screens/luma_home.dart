@@ -123,16 +123,19 @@ class _LumaHomeState extends State<LumaHome> {
           Expanded(
               child: SegmentedButton<bool>(
                   segments: const [
-                    ButtonSegment(value: false, label: Text('English')),
-                    ButtonSegment(value: true, label: Text('Krio')),
-                  ],
-                  selected: {_krio},
+                ButtonSegment(value: false, label: Text('English')),
+                ButtonSegment(value: true, label: Text('Krio')),
+              ],
+                  selected: {
+                _krio
+              },
                   showSelectedIcon: false,
                   onSelectionChanged: (s) => setState(() => _krio = s.first))),
           const SizedBox(width: 10),
           FilledButton.icon(
               onPressed: _toggleGuide,
-              icon: Icon(_speaking ? Icons.stop_rounded : Icons.volume_up_rounded),
+              icon: Icon(
+                  _speaking ? Icons.stop_rounded : Icons.volume_up_rounded),
               label: Text(_speaking ? 'Stop' : 'Listen')),
         ]),
         const SizedBox(height: 16),
@@ -182,8 +185,8 @@ class _LumaHomeState extends State<LumaHome> {
               ])),
         const SizedBox(height: 20),
         const Text('Choose a category',
-            style:
-                TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: ink)),
+            style: TextStyle(
+                fontWeight: FontWeight.w800, fontSize: 20, color: ink)),
         const SizedBox(height: 10),
         LayoutBuilder(
           builder: (context, box) {
@@ -197,8 +200,8 @@ class _LumaHomeState extends State<LumaHome> {
               childAspectRatio: wide ? 1.1 : 1.28,
               children: [
                 for (final t in _tiles)
-                  _TileButton(
-                      t, onTap: () => widget.onTab(1, category: t.category)),
+                  _TileButton(t,
+                      onTap: () => widget.onTab(1, category: t.category)),
               ],
             );
           },
@@ -213,7 +216,8 @@ class _LumaHomeState extends State<LumaHome> {
                   foreground: Colors.white,
                   onTap: () {
                     widget.onTab(1);
-                    notice(context, 'Choose a product, then tap Request quote.');
+                    notice(
+                        context, 'Choose a product, then tap Request quote.');
                   })),
           const SizedBox(width: 12),
           Expanded(
@@ -249,7 +253,8 @@ class _TileButton extends StatelessWidget {
             decoration: BoxDecoration(
                 color: tile.background,
                 borderRadius: BorderRadius.circular(22)),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(tile.icon, color: green, size: 48),
               const SizedBox(height: 9),
               Text(tile.label,

@@ -111,7 +111,8 @@ void main() {
       expect(tap.calls, 0, reason: 'does not navigate or create anything');
     });
 
-    testWidgets('Listen reads the English guide, Krio switch reads the Krio one',
+    testWidgets(
+        'Listen reads the English guide, Krio switch reads the Krio one',
         (tester) async {
       final speaker = _FakeSpeaker();
       await _pump(tester, speaker, _Tap());
@@ -159,15 +160,15 @@ void main() {
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(SusuLumaApp(
-          store: AppStore(clock: () => DateTime(2026, 11, 18))));
+      await tester.pumpWidget(
+          SusuLumaApp(store: AppStore(clock: () => DateTime(2026, 11, 18))));
       await tester.tap(find.text('Continue as buyer'));
       await tester.pumpAndSettle();
       expect(find.text('Choose a category'), findsOneWidget);
       await tester.tap(find.text('FARMING'));
       await tester.pumpAndSettle();
-      final chip = tester.widget<ChoiceChip>(
-          find.widgetWithText(ChoiceChip, 'Agriculture'));
+      final chip = tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Agriculture'));
       expect(chip.selected, isTrue);
       expect(find.text('Fresh Cocoa Beans'), findsOneWidget);
       expect(find.text('Portland Cement 50 kg'), findsNothing);
